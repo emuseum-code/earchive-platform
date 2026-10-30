@@ -64,5 +64,6 @@ echo "DNS of $DOMAIN: $(getent hosts "$DOMAIN" | awk '{print $1}' | tr '\n' ' ')
 public="$(curl -s --max-time 20 -o /dev/null -w '%{http_code}' "https://$DOMAIN/admin/login" || true)"
 echo "https://$DOMAIN/admin/login -> $public"
 [ "$public" = 200 ] || echo "::warning::https://$DOMAIN/ is not reachable yet: check the DNS A record ($DOMAIN -> this server)"
+$C logs books-app 2>&1 | grep '@books.test' | tail -4 || true
 $C exec -T books-app php artisan tinker --execute='echo App\Models\User::count()." users, ".App\Models\Record::count()." records\n";' || true
 [ "$login" = 200 ] || { $C logs --tail=40 books-app; exit 1; }
