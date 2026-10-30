@@ -66,7 +66,7 @@ class Book extends Model
     /** Перерахунок лічильників картки книги. */
     public function refreshCounters(): void
     {
-        $scans = $this->scans()->toBase()
+        $scans = $this->scans()->reorder()->toBase()
             ->selectRaw('count(*) as total')
             ->selectRaw("sum(case when file_status <> 'present' then 1 else 0 end) as missing")
             ->selectRaw('sum(case when recognition_status = ? then 1 else 0 end) as recognized', [RecognitionStatus::Done->value])

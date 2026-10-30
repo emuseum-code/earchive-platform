@@ -1,0 +1,61 @@
+# Облік інвентарних книг: cp admin/.env.docker.example admin/.env && docker compose up -d --build
+# Адмінка: http://<сервер>:8093/admin
+# Імена сервісів з префіксом books-, бо на живому сервері вебсервер підключено ще й до мережі музейного порталу.
+services:
+  books-app:                 # Laravel 13 + Filament 5 (PHP-FPM)
+    build: ./admin
+    image: books-app:latest    # на живому сервері образ збирає GitHub Actions
+    restart: unless-stopped
+    env_file: ./admin/.env
+    environment:
+      RUN_MIGRATIONS: "1"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
+    volumes:
+      - storage:/var/www/html/storage/app
+      - public:/var/www/public-shared
+    depends_on:
+      books-db: { condition: service_healthy }
+
+  books-queue:               # розпізнавання, AI-перевірка, адаптація, експорт
+    image: books-app:latest
+    restart: unless-stopped
+    env_file: ./admin/.env
+    command: php artisan queue:work --queue=interactive,default --timeout=600 --max-time=3600
+    volumes: [storage:/var/www/html/storage/app]
+    depends_on: [books-app]
+
+  books-scheduler:           # синхронізація сховища за розкладом, відновлення черги
+    image: books-app:latest
+    restart: unless-stopped
+    env_file: ./admin/.env
+    command: sh -c "php artisan schedule:clear-cache; exec php artisan schedule:work"
+    volumes: [storage:/var/www/html/storage/app]
+    depends_on: [books-app]
+
+  books-web:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-8093}:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - public:/var/www/html/public:ro
+    depends_on: [books-app]
+
+  books-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: books
+      POSTGRES_USER: books
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U books"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  storage:
+  public:
+  pgdata:

@@ -1,0 +1,71 @@
+# Deploys the inventory-book admin to the shared VPS on every push to main (and by hand from the Actions tab).
+# Repository secrets (DEPLOY_HOST, DEPLOY_USER, DEPLOY_PORT and DOMAIN may also be repository variables):
+# DEPLOY_HOST, DEPLOY_USER (e.g. root), DEPLOY_SSH_KEY (private key, same as the museum portal), DOMAIN (books.emuseum.ua),
+# ADMIN_PASSWORD (password of the demo users *@books.test, seeds the database on the first deploy), optional GEMINI_API_KEY, DEPLOY_PORT.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency: deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HOST: ${{ secrets.DEPLOY_HOST || vars.DEPLOY_HOST }}
+      USER: ${{ secrets.DEPLOY_USER || vars.DEPLOY_USER || 'root' }}
+      PORT: ${{ secrets.DEPLOY_PORT || vars.DEPLOY_PORT || '22' }}
+      DOMAIN: ${{ secrets.DOMAIN || vars.DOMAIN || 'books.emuseum.ua' }}
+      HAS_KEY: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+    steps:
+      - name: Check secrets
+        id: check
+        run: |
+          echo "DEPLOY_HOST set: $([ -n "$HOST" ] && echo yes || echo NO)"; echo "DOMAIN: $DOMAIN"
+          echo "DEPLOY_SSH_KEY set: $HAS_KEY"
+          echo "ADMIN_PASSWORD set: ${{ secrets.ADMIN_PASSWORD != '' }}"
+          echo "GEMINI_API_KEY set: ${{ secrets.GEMINI_API_KEY != '' }}"
+          if [ -z "$HOST" ] || [ "$HAS_KEY" != true ]; then
+            echo "::warning::DEPLOY_HOST or DEPLOY_SSH_KEY is not set, skipping deploy"; echo "go=0" >> "$GITHUB_OUTPUT"
+          else echo "go=1" >> "$GITHUB_OUTPUT"; fi
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.go == '1'
+
+      # The image is built here, never on the shared VPS (builds there ran it out of memory).
+      - name: Build image
+        if: steps.check.outputs.go == '1'
+        run: |
+          docker build -t books-app:latest ./admin
+          docker save books-app:latest | gzip -1 > /tmp/images.tar.gz
+          ls -lh /tmp/images.tar.gz
+
+      - name: SSH key
+        if: steps.check.outputs.go == '1'
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          ssh-keygen -lf ~/.ssh/id_deploy >/dev/null || echo "::error::DEPLOY_SSH_KEY is not a valid private key"
+          ssh-keyscan -p "$PORT" "$HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload code
+        if: steps.check.outputs.go == '1'
+        run: |
+          ssh -o ServerAliveInterval=30 -i ~/.ssh/id_deploy -p "$PORT" "$USER@$HOST" 'mkdir -p /opt/books && command -v rsync >/dev/null || (apt-get update -qq && apt-get install -y -qq rsync)'
+          rsync -az --delete -e "ssh -o ServerAliveInterval=30 -i ~/.ssh/id_deploy -p $PORT" \
+            --exclude .git --exclude /.env --exclude admin/.env --exclude admin/vendor --exclude 'admin/database/*.sqlite' \
+            ./ "$USER@$HOST:/opt/books/"
+
+      - name: Upload image
+        if: steps.check.outputs.go == '1'
+        run: |
+          ssh -o ServerAliveInterval=30 -i ~/.ssh/id_deploy -p "$PORT" "$USER@$HOST" 'gunzip | docker load' < /tmp/images.tar.gz
+
+      - name: Start
+        if: steps.check.outputs.go == '1'
+        run: |
+          ssh -o ServerAliveInterval=30 -i ~/.ssh/id_deploy -p "$PORT" "$USER@$HOST" \
+            "PREBUILT=1 DOMAIN='$DOMAIN' ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' GEMINI_API_KEY='${{ secrets.GEMINI_API_KEY }}' sh /opt/books/deploy/remote.sh"
