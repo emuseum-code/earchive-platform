@@ -32,6 +32,7 @@ class Settings
         'ai.price_output_per_m' => 10.0,
         'ai.demo_mode' => false,
         'ai.mass_processing_allowed' => false,
+        'ai.test_scan_limit' => 20,
         'queue.paused' => false,
         'registry.api_url' => null,
     ];

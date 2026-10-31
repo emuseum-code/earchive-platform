@@ -47,6 +47,27 @@ php artisan schedule:work              # окремо: синхронізаці�
 
 Доступ описано в `App\Filament\Support\Access`: кожен ресурс задає `viewAccess()` / `editAccess()` (`all`, `staff`, `operate`, `verify`, `adapt`, `admin`). Оператор і верифікатор бачать лише призначені їм музеї або книги (якщо призначення є).
 
+Суміщення ролей (лише адміністратор, у картці користувача): оператору можна додати звірку (`can_verify`), верифікатору обробку (`can_operate`). Право на адаптацію й експорт (`can_adapt_export`) дається окремо.
+
+## Звірка
+
+Екран `/admin/records/{id}/review`: скан ліворуч лишається на екрані під час прокручування полів.
+
+- Олівець (✎ біля поля або над сканом): обвести на скані місце з помилкою, виділити мишею в полі текст, що не збігається, і натиснути «Зберегти й перевірити AI». Фрагмент зберігається в `review_remarks.fragment` і передається в AI-перевірку як `mismatched_text`; на скані й під полем він підсвічується тим самим номером.
+- Гарячі клавіші: Ctrl/⌘+S зберегти, Ctrl/⌘+Enter підтвердити звірку, Alt+PgDn/PgUp наступний/попередній запис, Alt+←/→ сторінки скану.
+- Глобальний пошук (Ctrl/⌘+K): записи за номером, обліковим та інвентарним номером, книги за назвою й папкою.
+
+## Масова обробка
+
+Поки адміністратор не ввімкне «Масову обробку дозволено» (Налаштування → Gemini AI), за один запуск розпізнавання можна взяти не більше `ai.test_scan_limit` сторінок (типово 20). Так спершу проганяють тестову партію й перевіряють якість і вартість.
+
+## Резервні копії
+
+Сервіс `books-backup` (`deploy/backup.sh`, образ postgres:16-alpine) щодня о `BACKUP_HOUR` (01 UTC) робить `pg_dump -Fc` у том `backups`, зберігає 14 днів. Щонеділі й при першому запуску копія повністю відновлюється в тимчасову базу `books_restore_check` і перевіряється кількість користувачів і записів; в інші дні перевіряється зміст архіву. Стан пишеться в `last.json`, адміністратор бачить його на Огляді й у Налаштування → Резервні копії.
+
+Зробити копію зараз: `docker compose -p books exec books-backup sh /backup.sh now`.
+Відновити (спершу зупинити books-app, -queue, -scheduler): `docker compose -p books exec books-backup sh -c 'PGPASSWORD=$POSTGRES_PASSWORD pg_restore -h books-db -U books -d books --clean --if-exists /backups/books-YYYYMMDD-HHMM.dump'`.
+
 ## Деплой
 
-Ще не налаштований. План: окремий піддомен, Docker-образ збирається на GitHub Actions (не на VPS), секрети в GitHub Secrets.
+Push у `main` запускає GitHub Actions: образ збирається на Actions, `docker save` → ssh → `docker load` на VPS (`/opt/books`, compose-проєкт `books`), сайт Caddy `/opt/caddy-sites/books.caddy` перевіряється `caddy validate` перед перезавантаженням. Секрети тільки в GitHub Secrets (DEPLOY_SSH_KEY, DEPLOY_HOST, DEPLOY_USER, DOMAIN, ADMIN_PASSWORD, за потреби GEMINI_API_KEY). Пароль демо-користувачів `*@books.test` синхронізується з ADMIN_PASSWORD при кожному деплої.

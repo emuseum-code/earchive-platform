@@ -41,12 +41,16 @@ class QueueManager
     /** @param iterable<\App\Models\Scan> $scans */
     public function enqueueRecognition(iterable $scans, ?User $user): array
     {
+        $scans = collect($scans)->filter(fn ($scan) => $scan->file_status->value === 'present');
+        // ТЗ 18.1: спершу тестовий запуск, масову обробку адміністратор дозволяє окремо
+        $limit = (int) Settings::get('ai.test_scan_limit');
+        if (! Settings::get('ai.mass_processing_allowed') && $scans->count() > $limit) {
+            throw new \DomainException("Масову обробку ще не дозволено: за один запуск можна до {$limit} сторінок, вибрано {$scans->count()}. "
+                .'Адміністратор дозволяє її в Налаштування → Gemini AI після тестового запуску.');
+        }
         $batch = (string) Str::uuid();
         $n = 0;
         foreach ($scans as $scan) {
-            if ($scan->file_status->value !== 'present') {
-                continue;
-            }
             $this->enqueue(JobType::Recognize, $scan, $user, $batch);
             $scan->update(['recognition_status' => RecognitionStatus::Queued]);
             $n++;

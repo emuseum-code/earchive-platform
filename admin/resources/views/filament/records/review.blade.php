@@ -7,17 +7,31 @@
     $proposals = $this->pendingProposals();
     $remarks = $this->remarks();
     $openRemarks = $remarks->where('status.value', 'open');
+    $remarkNo = $openRemarks->sortBy('id')->pluck('id')->values()->flip()->map(fn ($i) => $i + 1);
+    $cut = fn ($t, $n, $tail) => mb_strlen($t) > $n ? ($tail ? '…'.mb_substr($t, -$n) : mb_substr($t, 0, $n).'…') : $t;
     $uncertain = $record->uncertain_fields ?? [];
     $groups = collect(Record::FIELDS)->groupBy(fn ($f) => $f[1], true);
     $long = ['title', 'description', 'acquisition_source', 'provenance', 'notes', 'material', 'location'];
 @endphp
 <x-filament-panels::page>
-<div class="bk-review" @if ($running) wire:poll.2s="pollAi" @endif>
+{{-- Гарячі клавіші звірки: Ctrl/⌘+S — зберегти правки, Ctrl/⌘+Enter — підтвердити, Alt+PgDn/PgUp — наступний/попередній запис --}}
+<div class="bk-review" @if ($running) wire:poll.2s="pollAi" @endif
+     x-data="{
+        {{-- Олівець: виділений у полі текст іде в зауваження, лише коли форма відкрита саме для цього поля --}}
+        frag(el, k) { if (el.selectionEnd > el.selectionStart && this.$wire.remarkOpen && this.$wire.remarkField === k) this.$wire.setFragment(k, el.selectionStart, el.selectionEnd) },
+        {{-- Гаряча клавіша: спершу знімаємо фокус, щоб поле передало значення (wire:model.blur) --}}
+        hot(fn) { document.activeElement?.blur(); setTimeout(() => this.$wire[fn](), 50) },
+     }"
+     @if ($canEdit)
+     x-on:keydown.window.ctrl.s.prevent="hot('saveFields')" x-on:keydown.window.meta.s.prevent="hot('saveFields')"
+     x-on:keydown.window.ctrl.enter.prevent="hot('confirm')" x-on:keydown.window.meta.enter.prevent="hot('confirm')"
+     @endif
+     x-on:keydown.window.alt.page-down.prevent="$wire.go(1)" x-on:keydown.window.alt.page-up.prevent="$wire.go(-1)">
     {{-- Ліва панель: оригінальний скан --}}
     <section class="bk-review__left">
         <div class="bk-card bk-sticky">
             @if (count($this->scansList))
-                <x-scan-viewer :scans="$this->scansList" :selectable="$canEdit" height="calc(100vh - 15rem)" />
+                <x-scan-viewer :scans="$this->scansList" :selectable="$canEdit" height="calc(100vh - 18rem)" />
             @else
                 <p class="bk-muted">Запис не пов’язаний зі сканами.</p>
             @endif
@@ -119,7 +133,26 @@
         {{-- Форма зауваження --}}
         @if ($remarkOpen && $canEdit)
             <div class="bk-card bk-remark-form" wire:key="remark-form">
-                <div class="bk-card__head"><h3>Позначити помилку</h3><button type="button" class="bk-link" wire:click="$set('remarkOpen', false)">Скасувати</button></div>
+                <div class="bk-card__head"><h3>✎ Позначити помилку</h3><button type="button" class="bk-link" wire:click="$set('remarkOpen', false)">Скасувати</button></div>
+                <ol class="bk-steps">
+                    <li @class(['is-done' => $pendingRegion])>
+                        @if ($pendingRegion) Область на скані обведено.
+                            <button type="button" class="bk-link" wire:click="$set('pendingRegion', null)" x-on:click="$dispatch('bk-pencil')">Обвести заново</button>
+                        @else Обведіть на скані ліворуч місце з помилкою (олівець уже увімкнено).
+                            <button type="button" class="bk-link" x-on:click="$dispatch('bk-pencil')">Увімкнути олівець</button>
+                        @endif
+                    </li>
+                    @if ($remarkType === 'field')
+                        <li @class(['is-done' => $pendingFragment])>
+                            @if ($pendingFragment) У тексті позначено: <mark class="bk-mark">{{ $pendingFragment['text'] }}</mark>
+                                <button type="button" class="bk-link" wire:click="$set('pendingFragment', null)">Прибрати</button>
+                            @elseif ($remarkField) Виділіть мишею в полі «{{ Record::label($remarkField) }}» текст, що не збігається зі сканом.
+                            @else Оберіть поле нижче, а потім виділіть у ньому текст, що не збігається.
+                            @endif
+                        </li>
+                    @endif
+                    <li>Напишіть правильне значення або коментар і натисніть «Зберегти й перевірити AI».</li>
+                </ol>
                 <div class="bk-grid2">
                     <label class="bk-field"><span>Тип зауваження</span>
                         <select class="bk-select" wire:model.live="remarkType">
@@ -141,12 +174,10 @@
                     <label class="bk-field"><span>Правильне значення, якщо відоме</span>
                         <textarea class="bk-input" rows="2" wire:model="remarkValue"></textarea></label>
                 @endif
-                <p class="bk-muted">
-                    @if ($pendingRegion) ✓ Область на скані виділено.
-                        <button type="button" class="bk-link" wire:click="$set('pendingRegion', null)">Прибрати</button>
-                    @else За потреби натисніть «▭ Виділити» над сканом і обведіть фрагмент. @endif
-                </p>
-                <div class="bk-actions"><button type="button" class="bk-btn bk-btn--primary" wire:click="saveRemark">Зберегти зауваження</button></div>
+                <div class="bk-actions">
+                    <button type="button" class="bk-btn bk-btn--primary" wire:click="saveRemarkAndCheck" @disabled($running)>Зберегти й перевірити AI</button>
+                    <button type="button" class="bk-btn" wire:click="saveRemark">Лише зберегти</button>
+                </div>
             </div>
         @endif
 
@@ -158,8 +189,11 @@
                     @php
                         $fieldRemarks = $openRemarks->where('field', $key);
                         $hasRegion = isset($record->field_regions[$key]);
+                        $pencil = $remarkOpen && $canEdit && $remarkType === 'field' && $remarkField === $key;
+                        $frags = $fieldRemarks->filter(fn ($r) => $r->fragment)->map(fn ($r) => ['n' => $remarkNo[$r->id] ?? null, 'f' => $r->fragment, 'region' => $r->region]);
+                        if ($pencil && $pendingFragment) { $frags->push(['n' => '✎', 'f' => $pendingFragment, 'region' => $pendingRegion]); }
                     @endphp
-                    <div @class(['bk-row', 'is-active' => $activeField === $key, 'has-error' => $fieldRemarks->count(), 'is-uncertain' => isset($uncertain[$key]), 'has-proposal' => $proposals->has($key)])
+                    <div @class(['bk-row', 'is-active' => $activeField === $key, 'has-error' => $fieldRemarks->count(), 'is-uncertain' => isset($uncertain[$key]), 'has-proposal' => $proposals->has($key), 'is-pencil' => $pencil])
                          wire:key="f-{{ $key }}">
                         <label class="bk-row__label" for="f-{{ $key }}">
                             {{ $f[0] }}
@@ -167,16 +201,26 @@
                             @if ($fieldRemarks->count())<span class="bk-badge bk-badge--danger">помилка · {{ $fieldRemarks->count() }}</span>@endif
                             @if ($proposals->has($key))<span class="bk-badge bk-badge--primary">є пропозиція AI</span>@endif
                         </label>
-                        <div class="bk-row__control">
+                        <div class="bk-row__control"><div class="bk-row__input">
                             @if (in_array($key, $long, true))
                                 <textarea id="f-{{ $key }}" class="bk-input" rows="{{ $key === 'description' ? 5 : 2 }}" wire:model.blur="data.{{ $key }}"
-                                          wire:focus="selectField('{{ $key }}')" @disabled(! $canEdit)></textarea>
+                                          wire:focus="selectField('{{ $key }}')" @disabled(! $canEdit) @if ($canEdit) x-on:mouseup="frag($el, '{{ $key }}')" x-on:keyup.shift="frag($el, '{{ $key }}')" @endif></textarea>
                             @else
-                                <input id="f-{{ $key }}" class="bk-input" type="text" wire:model.blur="data.{{ $key }}" wire:focus="selectField('{{ $key }}')" @disabled(! $canEdit)>
+                                <input id="f-{{ $key }}" class="bk-input" type="text" wire:model.blur="data.{{ $key }}" wire:focus="selectField('{{ $key }}')" @disabled(! $canEdit) @if ($canEdit) x-on:mouseup="frag($el, '{{ $key }}')" x-on:keyup.shift="frag($el, '{{ $key }}')" @endif>
                             @endif
+                            @if ($pencil && ! $pendingFragment)<div class="bk-pencil-hint">✎ Виділіть мишею текст, що не збігається зі сканом</div>@endif
+                            @foreach ($frags as $fr)
+                                @php $parts = \App\Models\ReviewRemark::splitFragment($data[$key] ?? null, $fr['f']); @endphp
+                                <div class="bk-frag" @if ($fr['region']) role="button" tabindex="0" title="Показати на скані" wire:click="$set('highlight', @js($fr['region']))" @endif>
+                                    <span class="bk-frag__n">{{ $fr['n'] }}</span>
+                                    @if ($parts)<span>{{ $cut($parts[0], 40, true) }}<mark class="bk-mark">{{ $parts[1] }}</mark>{{ $cut($parts[2], 40, false) }}</span>
+                                    @else <span>Позначено: <mark class="bk-mark">{{ $fr['f']['text'] }}</mark> <span class="bk-muted">(у полі вже виправлено)</span></span>@endif
+                                </div>
+                            @endforeach
+                            </div>
                             <div class="bk-row__tools">
                                 @if ($hasRegion)<button type="button" class="bk-icon-btn" wire:click="selectField('{{ $key }}')" title="Показати на скані">◎</button>@endif
-                                @if ($canEdit)<button type="button" class="bk-icon-btn bk-icon-btn--flag" wire:click="openRemark('field', '{{ $key }}')" title="Позначити помилку">⚑</button>@endif
+                                @if ($canEdit)<button type="button" class="bk-icon-btn bk-icon-btn--flag" wire:click="openRemark('field', '{{ $key }}')" title="Олівець: позначити помилку на скані й у тексті" aria-label="Позначити помилку">✎</button>@endif
                             </div>
                         </div>
                     </div>
@@ -208,11 +252,13 @@
             @forelse ($remarks as $r)
                 <div @class(['bk-remark', 'is-closed' => $r->status->value !== 'open']) wire:key="r-{{ $r->id }}">
                     <div class="bk-remark__head">
+                        @if (isset($remarkNo[$r->id]))<span class="bk-frag__n">{{ $remarkNo[$r->id] }}</span>@endif
                         <span class="bk-badge bk-badge--{{ $r->status->getColor() }}">{{ $r->status->getLabel() }}</span>
                         <strong>{{ $r->fieldLabel() }}</strong>
                         <span class="bk-muted">{{ $r->user?->name }} · {{ $r->created_at->format('d.m.Y H:i') }}</span>
                         @if ($r->region)<button type="button" class="bk-link" wire:click="$set('highlight', @js($r->region))">показати на скані</button>@endif
                     </div>
+                    @if ($r->fragment)<p class="bk-muted">Позначено в тексті: <mark class="bk-mark">{{ $r->fragment['text'] }}</mark></p>@endif
                     @if ($r->comment)<p>{{ $r->comment }}</p>@endif
                     @if ($r->suggested_value !== null)<p class="bk-muted">Правильне значення: <strong>{{ $r->suggested_value }}</strong></p>@endif
                     @if ($canEdit)
@@ -244,6 +290,7 @@
                 @if ($openRemarks->count() || $proposals->count())
                     <span class="bk-muted">Відкритих зауважень: {{ $openRemarks->count() }}, пропозицій без рішення: {{ $proposals->count() }}</span>
                 @endif
+                <span class="bk-muted bk-kbd-hint"><kbd>Ctrl</kbd>+<kbd>S</kbd> зберегти · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> підтвердити · <kbd>Alt</kbd>+<kbd>PgDn</kbd> наступний запис</span>
             </div>
         @endif
     </section>

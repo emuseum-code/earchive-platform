@@ -13,6 +13,7 @@ services:
     volumes:
       - storage:/var/www/html/storage/app
       - public:/var/www/public-shared
+      - backups:/var/www/html/storage/backups:ro
     depends_on:
       books-db: { condition: service_healthy }
 
@@ -55,7 +56,24 @@ services:
       interval: 5s
       retries: 10
 
+  books-backup:              # щоденна копія бази з перевіркою відновлення (ТЗ 12)
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: books
+      POSTGRES_USER: books
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
+      BACKUP_HOUR: "01"
+      BACKUP_KEEP_DAYS: "14"
+    entrypoint: ["sh", "/backup.sh"]
+    volumes:
+      - ./deploy/backup.sh:/backup.sh:ro
+      - backups:/backups
+    depends_on:
+      books-db: { condition: service_healthy }
+
 volumes:
   storage:
   public:
   pgdata:
+  backups:

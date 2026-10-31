@@ -46,7 +46,8 @@
      x-init="$watch('highlight', h => { if (h && h.scan_id) { const i = scans.findIndex(s => s.id === h.scan_id); if (i >= 0 && i !== idx) { idx = i; reset() } } })"
      @keydown.window="if (['INPUT','TEXTAREA','SELECT'].includes($event.target.tagName)) return;
         if ($event.key === 'ArrowRight' && $event.altKey) go(1); if ($event.key === 'ArrowLeft' && $event.altKey) go(-1)"
-     @mouseup.window="up()">
+     @mouseup.window="up()"
+     @if ($selectable) @bk-pencil.window="selecting = true; sel = null" @endif>
 
     <div class="bk-viewer__bar">
         <div class="bk-viewer__group">
@@ -63,7 +64,7 @@
             <button type="button" class="bk-btn" @click="reset()" title="Скинути вигляд">⤢</button>
             @if ($selectable)
                 <button type="button" class="bk-btn" :class="selecting && 'bk-btn--on'" @click="selecting = !selecting; sel = null"
-                        title="Виділити область з невідповідністю">▭ Виділити</button>
+                        title="Олівець: обвести на скані місце з помилкою">✎ Олівець</button>
             @endif
             <a class="bk-btn" :href="scan && scan.url" target="_blank" rel="noopener" title="Відкрити оригінал">↗</a>
         </div>
@@ -75,12 +76,12 @@
                 <img x-ref="img" :src="scan.url" :alt="scan.filename" draggable="false">
                 <div class="bk-viewer__hl" x-show="hlOnThis()" :style="hlOnThis() ? box(highlight) : ''"></div>
                 <template x-for="(r, i) in (scan.regions || [])" :key="i">
-                    <div class="bk-viewer__mark" :style="box(r)" :title="r.title"></div>
+                    <div class="bk-viewer__mark" :style="box(r)" :title="r.title"><span x-show="r.n" x-text="r.n"></span></div>
                 </template>
                 <div class="bk-viewer__sel" x-show="sel" :style="box(sel)"></div>
             </div>
         </template>
-        <div class="bk-viewer__hint" x-show="selecting">Протягніть мишею по скану, щоб виділити область<span x-show="rot % 360 !== 0"> (спершу поверніть сторінку в 0°)</span></div>
+        <div class="bk-viewer__hint" x-show="selecting">✎ Обведіть мишею на скані місце з помилкою<span x-show="rot % 360 !== 0"> (спершу поверніть сторінку в 0°)</span></div>
     </div>
 
     <div class="bk-viewer__thumbs">

@@ -58,6 +58,16 @@ class BookResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['title', 'folder_path'];
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return array_filter(['Музей' => $record->museum?->name, 'Фонд' => $record->fund?->name]);
+    }
+
     protected static ?int $navigationSort = 3;
 
     public static function getEloquentQuery(): Builder
@@ -166,7 +176,13 @@ class BookResource extends Resource
         $scans = \App\Models\Scan::whereIn('book_id', collect($books)->pluck('id'))->where('file_status', 'present')
             ->when($onlyNew, fn ($q) => $q->whereIn('recognition_status', ['none', 'failed'])->orWhere(fn ($w) => $w->whereIn('book_id', collect($books)->pluck('id'))->where('needs_recheck', true)))
             ->orderBy('book_id')->orderBy('page_order')->get();
-        [, $n] = app(QueueManager::class)->enqueueRecognition($scans, auth()->user());
+        try {
+            [, $n] = app(QueueManager::class)->enqueueRecognition($scans, auth()->user());
+        } catch (\DomainException $e) {
+            Notification::make()->danger()->title('Розпізнавання не запущено')->body($e->getMessage())->persistent()->send();
+
+            return;
+        }
         Notification::make()->success()->title($n ? "У черзі {$n} сторінок" : 'Немає сторінок для розпізнавання')
             ->body($n ? 'Обробка триває у фоні; браузер можна закрити.' : null)->send();
     }

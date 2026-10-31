@@ -50,6 +50,9 @@ class ReviewRecord extends Page
 
     public ?array $pendingRegion = null;
 
+    /** «Олівець»: виділений у полі текст, що не збігається зі сканом ({start, end, text}) */
+    public ?array $pendingFragment = null;
+
     public ?string $activeField = null;
 
     /** Форма зауваження */
@@ -126,13 +129,15 @@ class ReviewRecord extends Page
     public function scansList(): array
     {
         $own = $this->record->scans()->get();
-        $regions = $this->record->remarks()->whereNotNull('region')->where('status', 'open')->get();
+        $open = $this->record->remarks()->where('status', 'open')->orderBy('id')->get();
+        $num = $open->pluck('id')->flip();
+        $regions = $open->whereNotNull('region');
 
         return $own->map(fn ($s) => [
             'id' => $s->id, 'url' => route('scans.image', $s->id), 'thumb' => route('scans.thumb', $s->id), 'filename' => $s->filename,
             'label' => ($s->page_label ?: $s->filename).($s->pivot->is_continuation ? ' · продовження' : ''), 'page_order' => $s->page_order,
             'regions' => $regions->filter(fn ($r) => ($r->region['scan_id'] ?? $r->scan_id) === $s->id)
-                ->map(fn ($r) => $r->region + ['title' => $r->fieldLabel().': '.$r->comment])->values()->all(),
+                ->map(fn ($r) => $r->region + ['n' => $num[$r->id] + 1, 'title' => ($num[$r->id] + 1).'. '.$r->fieldLabel().': '.$r->comment])->values()->all(),
         ])->values()->all();
     }
 
@@ -188,15 +193,52 @@ class ReviewRecord extends Page
         $this->remarkComment = null;
         $this->remarkValue = null;
         $this->pendingRegion = null;
+        $this->pendingFragment = null;
         if ($field) {
             $this->selectField($field);
+        }
+        // Олівець: одразу вмикаємо виділення області на скані
+        $this->dispatch('bk-pencil');
+    }
+
+    public function updatedRemarkField(): void
+    {
+        $this->pendingFragment = null;
+    }
+
+    /** Текст, виділений мишею в полі під час позначення помилки. */
+    public function setFragment(string $field, int $start, int $end): void
+    {
+        $this->guard();
+        $value = (string) ($this->data[$field] ?? '');
+        if (! $this->remarkOpen || $this->remarkField !== $field || $end <= $start || $start < 0) {
+            return;
+        }
+        $text = mb_substr($value, $start, $end - $start);
+        if (trim($text) === '') {
+            return;
+        }
+        $this->pendingFragment = ['start' => $start, 'end' => $end, 'text' => mb_substr($text, 0, 500)];
+    }
+
+    /** «Зберегти й перевірити AI»: зауваження одразу йде на повторну AI-перевірку. */
+    public function saveRemarkAndCheck(): void
+    {
+        if ($this->saveRemark()) {
+            $this->runAiCheck();
         }
     }
 
     /** «Позначити помилку»: поле, область скану, коментар, правильне значення (ТЗ 8.2). */
-    public function saveRemark(): void
+    public function saveRemark(): bool
     {
         $this->guard();
+        if (blank($this->remarkComment) && blank($this->remarkValue) && $this->pendingFragment) {
+            $this->remarkComment = 'Не збігається зі сканом: «'.$this->pendingFragment['text'].'»';
+        }
+        if ($this->remarkType !== 'field' || ($this->pendingFragment && $this->remarkField === null)) {
+            $this->pendingFragment = null;
+        }
         $this->validate([
             'remarkType' => 'required|in:'.implode(',', array_column(RemarkType::cases(), 'value')),
             'remarkField' => 'required_if:remarkType,field|nullable|in:'.implode(',', array_keys(Record::FIELDS)),
@@ -213,6 +255,7 @@ class ReviewRecord extends Page
             'type' => $this->remarkType,
             'field' => $this->remarkType === 'field' ? $this->remarkField : null,
             'region' => $this->pendingRegion,
+            'fragment' => $this->pendingFragment,
             'comment' => $this->remarkComment,
             'current_value' => $this->remarkField ? $this->record->{$this->remarkField} : null,
             'suggested_value' => $this->remarkValue,
@@ -224,8 +267,11 @@ class ReviewRecord extends Page
         Activity::log('remark.created', $this->record, $remark->fieldLabel().': '.$remark->comment);
         $this->remarkOpen = false;
         $this->pendingRegion = null;
+        $this->pendingFragment = null;
         unset($this->scansList);
         Notification::make()->success()->title('Зауваження збережено')->send();
+
+        return true;
     }
 
     public function setRemarkStatus(int $id, string $status): void
@@ -252,6 +298,10 @@ class ReviewRecord extends Page
     {
         $this->guard();
         if (! $this->isDirty()) {
+            if (! $quiet) {
+                Notification::make()->info()->title('Змін немає, усе вже збережено')->send();
+            }
+
             return true;
         }
         try {

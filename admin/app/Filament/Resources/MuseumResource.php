@@ -6,6 +6,7 @@ use App\Filament\Resources\MuseumResource\Pages;
 use App\Filament\Resources\MuseumResource\RelationManagers\FundsRelationManager;
 use App\Filament\Support\Access;
 use App\Models\Museum;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -83,7 +84,15 @@ class MuseumResource extends Resource
             ])
             ->filters([SelectFilter::make('territory_id')->label('Територія')->relationship('territory', 'name')])
             ->recordUrl(fn (Museum $r) => BookResource::getUrl('index', ['filters' => ['museum_id' => ['value' => $r->id]]]))
-            ->recordActions([EditAction::make()->label('')]);
+            ->recordActions([
+                // ТЗ 6.1: запуск розпізнавання для цілого музею (нові, помилкові й змінені сторінки всіх його книг)
+                Action::make('recognize')->label('Розпізнати музей')->icon('heroicon-o-sparkles')->color('gray')
+                    ->visible(fn () => auth()->user()->canOperate())
+                    ->requiresConfirmation()->modalHeading(fn (Museum $record) => 'Розпізнати всі книги: '.$record->name)
+                    ->modalDescription('У чергу підуть нерозпізнані, помилкові та змінені сторінки всіх доступних вам книг музею. Уже розпізнані сторінки не повторюються.')
+                    ->action(fn (Museum $record) => BookResource::recognize(\App\Models\Book::visibleTo(auth()->user())->where('museum_id', $record->id)->get())),
+                EditAction::make()->label(''),
+            ]);
     }
 
     public static function getRelations(): array

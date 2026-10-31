@@ -104,7 +104,8 @@ textarea.bk-input { resize: vertical; line-height: 1.45; }
 
 /* Екран звірки: дві панелі */
 .bk-review { display: grid; grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); gap: 16px; align-items: start; }
-.bk-sticky { position: sticky; top: 72px; }
+.bk-review__left { align-self: stretch; }
+.bk-sticky { position: sticky; top: 76px; z-index: 5; }
 .bk-review__top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 10px; }
 .bk-nav { display: flex; gap: 6px; align-items: center; }
 .bk-row { display: grid; grid-template-columns: 150px 1fr; gap: 10px; padding: 7px 8px; border-radius: 8px; border-left: 3px solid transparent; }
@@ -174,6 +175,7 @@ textarea.bk-input { resize: vertical; line-height: 1.45; }
 .bk-tree-search { max-width: 360px; margin-bottom: 12px; }
 
 @media (max-width: 1100px) {
+  .bk-review__left { align-self: start; }
   .bk-review, .bk-cols { grid-template-columns: 1fr; }
   .bk-sticky { position: static; }
   .bk-viewer__stage { height: 60vh; }
@@ -183,3 +185,41 @@ textarea.bk-input { resize: vertical; line-height: 1.45; }
   .bk-grid2 { grid-template-columns: 1fr; }
   .bk-dl { grid-template-columns: 1fr; }
 }
+
+/* Резервні копії (Налаштування) */
+.bk-backups { display: grid; gap: 12px; font-size: 14px; }
+.bk-backups .bk-danger-text { color: rgb(185 28 28); }
+.bk-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bk-table th, .bk-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid rgb(148 163 184 / .25); }
+.bk-table th { font-weight: 600; color: rgb(100 116 139); }
+.dark .bk-backups .bk-danger-text { color: rgb(248 113 113); }
+.bk-kbd-hint { margin-left: auto; font-size: 12px; }
+.bk-kbd-hint kbd { font: inherit; font-size: 11px; padding: 1px 5px; border: 1px solid rgb(148 163 184 / .5); border-bottom-width: 2px; border-radius: 4px; background: rgb(148 163 184 / .08); }
+@media (max-width: 900px) { .bk-kbd-hint { display: none; } }
+
+/* Олівець звірки: позначка помилки на скані й у тексті поля */
+.bk-row__input { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.bk-row.is-pencil { background: rgb(220 38 38 / .06); border-left-color: var(--bk-danger); box-shadow: inset 0 0 0 1px rgb(220 38 38 / .25); }
+.bk-row.is-pencil .bk-input { border-color: var(--bk-danger); cursor: text; }
+.bk-row.is-pencil .bk-input::selection { background: rgb(220 38 38 / .35); }
+.bk-pencil-hint { font-size: 12px; color: var(--bk-danger); font-weight: 600; }
+.bk-frag { display: flex; gap: 6px; align-items: baseline; font-size: 13px; line-height: 1.5; padding: 4px 8px; border-radius: 6px; background: rgb(220 38 38 / .05); border: 1px dashed rgb(220 38 38 / .45); word-break: break-word; }
+.bk-frag[role="button"] { cursor: pointer; }
+.bk-frag[role="button"]:hover { background: rgb(220 38 38 / .1); }
+.bk-frag__n { flex: 0 0 auto; display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--bk-danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 1; }
+.bk-mark { background: rgb(220 38 38 / .2); color: inherit; border-bottom: 2px solid var(--bk-danger); border-radius: 2px; padding: 0 1px; }
+.bk-viewer__mark { border-style: solid; background: rgb(220 38 38 / .14); }
+.bk-viewer__mark span { position: absolute; top: -10px; left: -10px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--bk-danger); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.bk-steps { margin: 0 0 10px; padding-left: 20px; font-size: 13px; display: grid; gap: 4px; }
+.bk-steps li.is-done { color: var(--bk-success); }
+.bk-steps li.is-done::marker { content: '✓  '; }
+
+/* Акаунт у верхній панелі */
+.bk-account { display: flex; align-items: center; gap: 10px; margin-inline-end: 4px; }
+.bk-account__who { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.bk-account__name { font-size: 13px; font-weight: 600; color: var(--bk-text); white-space: nowrap; }
+.bk-account__role { font-size: 11px; color: var(--bk-muted); white-space: nowrap; }
+.bk-account__logout { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--bk-border); background: transparent; color: var(--bk-text); font-size: 13px; font-weight: 500; cursor: pointer; }
+.bk-account__logout:hover { background: rgb(220 38 38 / .08); border-color: rgb(220 38 38 / .4); color: var(--bk-danger); }
+.bk-account__logout svg { width: 16px; height: 16px; }
+@media (max-width: 720px) { .bk-account__who { display: none; } .bk-account__logout span { display: none; } }

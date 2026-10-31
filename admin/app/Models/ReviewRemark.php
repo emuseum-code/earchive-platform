@@ -23,6 +23,7 @@ class ReviewRemark extends Model
             'type' => RemarkType::class,
             'status' => RemarkStatus::class,
             'region' => 'array',
+            'fragment' => 'array',
             'resolved_at' => 'datetime',
         ];
     }
@@ -50,6 +51,29 @@ class ReviewRemark extends Model
     public function resolver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'resolved_by');
+    }
+
+    /**
+     * Розбиває значення поля на «до / фрагмент / після» для підсвічування в тексті.
+     * Спершу за збереженими позиціями, далі пошуком тексту; null — фрагмента в полі вже немає.
+     */
+    public static function splitFragment(?string $value, ?array $fragment): ?array
+    {
+        $text = (string) ($fragment['text'] ?? '');
+        $value = (string) $value;
+        if ($text === '' || $value === '') {
+            return null;
+        }
+        $len = mb_strlen($text);
+        $start = $fragment['start'] ?? null;
+        if (! is_int($start) || mb_substr($value, $start, $len) !== $text) {
+            $start = mb_strpos($value, $text);
+        }
+        if ($start === false || $start === null) {
+            return null;
+        }
+
+        return [mb_substr($value, 0, $start), $text, mb_substr($value, $start + $len)];
     }
 
     public function fieldLabel(): string

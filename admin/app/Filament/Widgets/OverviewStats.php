@@ -6,6 +6,7 @@ use App\Models\Book;
 use App\Models\Museum;
 use App\Models\Record;
 use App\Models\Scan;
+use App\Support\Backups;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -22,7 +23,7 @@ class OverviewStats extends StatsOverviewWidget
         $records = Record::visibleTo($u);
         $pct = fn ($a, $t) => $t ? round($a * 100 / $t).'%' : '0%';
 
-        return [
+        $stats = [
             Stat::make('Музеїв', Museum::visibleTo($u)->count())->description(number_format($b->c, 0, ',', ' ').' книг')->icon('heroicon-o-building-library'),
             Stat::make('Сканів', number_format($b->s, 0, ',', ' '))->description($pct($b->r, $b->s - $b->m).' розпізнано')->icon('heroicon-o-photo'),
             Stat::make('Записів', number_format($b->rc, 0, ',', ' '))
@@ -35,5 +36,14 @@ class OverviewStats extends StatsOverviewWidget
                 ->description($b->f.' помилок розпізнавання · '.$b->m.' недоступних · '.Scan::visibleTo($u)->where('needs_recheck', true)->count().' змінених')
                 ->color($b->f + $b->m ? 'danger' : null)->icon('heroicon-o-exclamation-triangle'),
         ];
+        if ($u->isAdmin()) {
+            $last = Backups::last();
+            $stats[] = Stat::make('Резервна копія бази', $last ? $last['time']?->format('d.m H:i') : 'ще немає')
+                ->description(Backups::healthy() ? 'перевірено, зберігаються 14 днів' : 'потрібна увага: див. Налаштування → Резервні копії')
+                ->color(Backups::healthy() ? 'success' : 'danger')->icon('heroicon-o-circle-stack')
+                ->url(\App\Filament\Pages\Settings::getUrl());
+        }
+
+        return $stats;
     }
 }

@@ -38,7 +38,8 @@ class AdminPanelProvider extends PanelProvider
             ->maxContentWidth('full')
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications(false)
-            ->globalSearch(false)
+            ->globalSearch()
+            ->globalSearchKeyBindings(['ctrl+k', 'mod+k'])
             ->unsavedChangesAlerts()
             ->navigationGroups([
                 NavigationGroup::make('Облік сканів'),
@@ -52,7 +53,8 @@ class AdminPanelProvider extends PanelProvider
             ->pages([Dashboard::class])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([])
-            ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render('<link rel="stylesheet" href="{{ asset(\'css/books.css\') }}?v=1">'))
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render('<link rel="stylesheet" href="{{ asset(\'css/books.css\') }}?v=2">'))
+            ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => view('filament.partials.account'))
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

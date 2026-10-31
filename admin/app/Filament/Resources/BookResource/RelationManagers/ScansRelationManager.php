@@ -72,7 +72,13 @@ class ScansRelationManager extends RelationManager
             ->toolbarActions([
                 BulkAction::make('recognize')->label('Розпізнати вибрані')->icon('heroicon-o-sparkles')->visible($canOperate)
                     ->action(function (Collection $scans) {
-                        [, $n] = app(QueueManager::class)->enqueueRecognition($scans, auth()->user());
+                        try {
+                            [, $n] = app(QueueManager::class)->enqueueRecognition($scans, auth()->user());
+                        } catch (\DomainException $e) {
+                            Notification::make()->danger()->title('Розпізнавання не запущено')->body($e->getMessage())->persistent()->send();
+
+                            return;
+                        }
                         Notification::make()->success()->title("У черзі {$n} сторінок")->send();
                     }),
             ]);

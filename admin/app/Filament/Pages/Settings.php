@@ -99,12 +99,19 @@ class Settings extends Page
                 ]),
                 Toggle::make('ai.mass_processing_allowed')->label('Дозволити масову обробку')
                     ->helperText('Вмикайте після успішного тестового розпізнавання (ТЗ 18.1 п.6).'),
+                TextInput::make('ai.test_scan_limit')->label('Сторінок за один запуск без масової обробки')->numeric()->minValue(1)->required()
+                    ->helperText('Поки масову обробку не дозволено, більші запуски блокуються.'),
                 Toggle::make('ai.demo_mode')->label('Демо-режим без ключа')
                     ->helperText('Лише для показу: «Перевірити AI» бере пропозиції із зауважень, повторне розпізнавання повторює попередній результат.'),
             ]),
             Tab::make('Реєстр')->icon('heroicon-o-building-library')->schema([
                 TextInput::make('registry.api_url')->label('Адреса API реєстру')->url()
                     ->helperText('Пряме передавання — після погодження обсягу інтеграції та надання документації (ТЗ 11).'),
+            ]),
+            Tab::make('Резервні копії')->icon('heroicon-o-circle-stack')->schema([
+                Placeholder::make('backups')->hiddenLabel()->content(fn () => new HtmlString(view('filament.pages.backups', [
+                    'last' => \App\Support\Backups::last(), 'files' => \App\Support\Backups::files(), 'healthy' => \App\Support\Backups::healthy(),
+                ])->render())),
             ]),
         ])]);
     }

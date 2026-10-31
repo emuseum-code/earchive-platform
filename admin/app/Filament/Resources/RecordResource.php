@@ -73,6 +73,29 @@ class RecordResource extends Resource
         return parent::getEloquentQuery()->visibleTo(auth()->user())->with(['book', 'museum', 'fund']);
     }
 
+    // Пошук у верхньому рядку (ТЗ 18.4): за номером запису, обліковим та інвентарним номером, назвою
+    protected static ?string $recordTitleAttribute = 'record_no';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['record_no', 'account_number', 'inventory_number', 'title'];
+    }
+
+    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return 'Запис № '.$record->record_no.($record->title ? ' · '.\Illuminate\Support\Str::limit($record->title, 60) : '');
+    }
+
+    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    {
+        return array_filter(['Книга' => $record->book?->title, 'Інв. №' => $record->inventory_number, 'Звірка' => $record->verification_status?->getLabel()]);
+    }
+
+    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): string
+    {
+        return static::getUrl('view', ['record' => $record]);
+    }
+
     public static function getNavigationBadge(): ?string
     {
         $n = Record::visibleTo(auth()->user())->where('verification_status', VerificationStatus::NeedsClarification->value)->count();

@@ -28,6 +28,8 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
             'role' => Role::class,
             'can_adapt_export' => 'boolean',
+            'can_verify' => 'boolean',
+            'can_operate' => 'boolean',
             'is_active' => 'boolean',
         ];
     }
@@ -55,19 +57,19 @@ class User extends Authenticatable implements FilamentUser
     /** Синхронізація, запуск розпізнавання, черга (оператор і адміністратор). */
     public function canOperate(): bool
     {
-        return in_array($this->role, [Role::Admin, Role::Operator], true);
+        return in_array($this->role, [Role::Admin, Role::Operator], true) || ($this->role === Role::Verifier && $this->can_operate);
     }
 
     /** Звірка, зауваження, AI-перевірка, підтвердження. Суміщення ролей призначає лише адміністратор. */
     public function canVerify(): bool
     {
-        return in_array($this->role, [Role::Admin, Role::Verifier], true);
+        return in_array($this->role, [Role::Admin, Role::Verifier], true) || ($this->role === Role::Operator && $this->can_verify);
     }
 
     /** Запуск адаптації та експорту: адміністратор, оператор — лише з окремим дозволом (ТЗ 18.1). */
     public function canAdaptExport(): bool
     {
-        return $this->isAdmin() || ($this->role === Role::Operator && $this->can_adapt_export);
+        return $this->isAdmin() || ($this->canOperate() && $this->can_adapt_export);
     }
 
     public function canEditRecords(): bool
@@ -110,5 +112,20 @@ class User extends Authenticatable implements FilamentUser
     public function scopeActive(Builder $q): Builder
     {
         return $q->where('is_active', true);
+    }
+
+    public function verifiedRecords(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Record::class, 'verified_by');
+    }
+
+    public function remarks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ReviewRemark::class);
+    }
+
+    public function aiChecks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(AiCheck::class);
     }
 }

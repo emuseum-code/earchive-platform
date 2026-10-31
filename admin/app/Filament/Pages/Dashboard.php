@@ -19,6 +19,9 @@ class Dashboard extends BaseDashboard
             $w[] = QueueStats::class;
         }
         $w[] = BooksProgress::class;
+        if (auth()->user()->isAdmin()) {
+            $w[] = \App\Filament\Widgets\VerifierActivity::class;
+        }
 
         return $w;
     }

@@ -8,3 +8,4 @@ storage/framework/views/*
 database/*.sqlite
 public/storage
 storage/app/thumbs/*
+storage/backups
