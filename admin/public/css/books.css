@@ -59,7 +59,8 @@ textarea.bk-input { resize: vertical; line-height: 1.45; }
 .bk-field { display: block; margin-bottom: 10px; }
 .bk-field > span { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
 .bk-error { color: var(--bk-danger); font-size: 12px; font-style: normal; }
-.bk-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+.bk-grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 12px; }
+.bk-grid2 .bk-select, .bk-field .bk-select { width: 100%; max-width: 100%; }
 .bk-actions { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
 .bk-actions--wrap { flex-wrap: wrap; }
 
