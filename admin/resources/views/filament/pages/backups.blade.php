@@ -6,7 +6,7 @@
     @else
         <p>
             <span class="bk-badge {{ $healthy ? 'bk-badge--success' : 'bk-badge--danger' }}">{{ $healthy ? 'Усе гаразд' : 'Потрібна увага' }}</span>
-            Остання копія: <strong>{{ $last['time']?->format('d.m.Y H:i') }}</strong>,
+            Остання копія: <strong>{{ \App\Support\Tz::fmt($last['time'], 'd.m.Y H:i') }}</strong>,
             {{ number_format(($last['size'] ?? 0) / 1048576, 1, ',', ' ') }} МБ,
             {{ $statusText[$last['status']] ?? $last['status'] }}
             ({{ ($last['check'] ?? '') === 'restore' ? 'повне тестове відновлення: '.$last['users'].' користувачів, '.$last['records'].' записів' : 'перевірено цілісність архіву' }}).
@@ -20,7 +20,7 @@
             <thead><tr><th>Файл</th><th>Створено</th><th>Розмір</th></tr></thead>
             <tbody>
             @foreach ($files as $f)
-                <tr><td><code>{{ $f['name'] }}</code></td><td>{{ $f['time']->format('d.m.Y H:i') }}</td><td>{{ number_format($f['size'] / 1048576, 1, ',', ' ') }} МБ</td></tr>
+                <tr><td><code>{{ $f['name'] }}</code></td><td>{{ \App\Support\Tz::fmt($f['time'], 'd.m.Y H:i') }}</td><td>{{ number_format($f['size'] / 1048576, 1, ',', ' ') }} МБ</td></tr>
             @endforeach
             </tbody>
         </table>
