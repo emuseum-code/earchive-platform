@@ -63,7 +63,7 @@ class ScansRelationManager extends RelationManager
             ->recordActions([
                 Action::make('open')->label('Відкрити')->icon('heroicon-o-eye')->color('gray')
                     ->url(fn (Scan $s) => BookResource::getUrl('pages', ['record' => $this->getOwnerRecord(), 'scan' => $s->id])),
-                Action::make('recognize')->label('Розпізнати')->icon('heroicon-o-sparkles')->visible($canOperate)
+                \App\Filament\Support\Ai::button(Action::make('recognize')->label('Розпізнати'))->visible($canOperate)
                     ->hidden(fn (Scan $s) => $s->file_status !== FileStatus::Present)
                     ->action(function (Scan $s) {
                         app(QueueManager::class)->enqueueRecognition([$s], auth()->user());
@@ -71,7 +71,7 @@ class ScansRelationManager extends RelationManager
                     }),
             ])
             ->toolbarActions([
-                BulkAction::make('recognize')->label('Розпізнати вибрані')->icon('heroicon-o-sparkles')->visible($canOperate)
+                \App\Filament\Support\Ai::item(BulkAction::make('recognize')->label('Розпізнати вибрані'))->visible($canOperate)
                     ->action(function (Collection $scans) {
                         try {
                             [, $n] = app(QueueManager::class)->enqueueRecognition($scans, auth()->user());

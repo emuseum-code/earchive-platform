@@ -175,7 +175,7 @@
                         <textarea class="bk-input" rows="2" wire:model="remarkValue"></textarea></label>
                 @endif
                 <div class="bk-actions">
-                    <button type="button" class="bk-btn bk-btn--primary" wire:click="saveRemarkAndCheck" @disabled($running)>Зберегти й перевірити AI</button>
+                    <button type="button" class="bk-btn bk-btn--ai" wire:click="saveRemarkAndCheck" @disabled($running)><x-filament::icon icon="heroicon-s-sparkles" class="h-4 w-4" /> Зберегти й перевірити AI</button>
                     <button type="button" class="bk-btn" wire:click="saveRemark">Лише зберегти</button>
                 </div>
             </div>

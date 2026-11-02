@@ -93,7 +93,7 @@ class ViewAdaptation extends Page
         return [
             Action::make('record')->label('Джерельний запис')->icon('heroicon-o-document-text')->color('gray')
                 ->url(RecordResource::getUrl('view', ['record' => $this->record->record_id])),
-            Action::make('readapt')->label('Адаптувати повторно')->icon('heroicon-o-arrow-path')
+            \App\Filament\Support\Ai::button(Action::make('readapt')->label('Адаптувати повторно'))
                 ->visible(fn () => auth()->user()->canAdaptExport())->requiresConfirmation()
                 ->action(function () {
                     app(QueueManager::class)->enqueue(JobType::Adapt, $this->record->record, auth()->user());

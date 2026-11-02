@@ -30,10 +30,12 @@ class ViewBook extends ViewRecord
             Action::make('pages')->label('Переглянути сторінки')->icon('heroicon-o-photo')->color('gray')
                 ->url(BookResource::getUrl('pages', ['record' => $this->record])),
             BookResource::uploadAction($this->record),
+            \App\Filament\Support\Ai::button(Action::make('recognize')->label('Розпізнати книгу'))
+                ->tooltip('Нові, помилкові та змінені сторінки')->visible($u->canOperate())
+                ->requiresConfirmation()->modalDescription('У чергу Gemini AI підуть нерозпізнані, помилкові та змінені сторінки книги.')
+                ->action(fn () => BookResource::recognize([$this->record])),
             ActionGroup::make([
-                Action::make('recognize')->label('Розпізнати нові та помилкові сторінки')->icon('heroicon-o-sparkles')
-                    ->requiresConfirmation()->action(fn () => BookResource::recognize([$this->record])),
-                Action::make('recognizeAll')->label('Розпізнати всю книгу повторно')->icon('heroicon-o-arrow-path')
+                \App\Filament\Support\Ai::item(Action::make('recognizeAll')->label('Розпізнати всю книгу повторно'))
                     ->requiresConfirmation()->modalDescription('Кожна сторінка отримає нову версію результату. Ручні правки не перезаписуються: зміни прийдуть як пропозиції.')
                     ->action(fn () => BookResource::recognize([$this->record], false)),
                 Action::make('refresh')->label('Перерахувати лічильники')->icon('heroicon-o-calculator')

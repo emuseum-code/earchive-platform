@@ -125,11 +125,10 @@ textarea.bk-input { resize: vertical; line-height: 1.45; }
   background: color-mix(in srgb, var(--bk-card) 92%, transparent); backdrop-filter: blur(6px); border: 1px solid var(--bk-border); border-radius: var(--bk-radius); }
 .bk-ai-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 20px; border: 0; border-radius: 999px; cursor: pointer;
   color: #fff; font-weight: 700; font-size: 15px; letter-spacing: .01em; text-shadow: 0 1px 1px rgb(0 0 0 / .25);
-  background: linear-gradient(100deg, #1d4ed8 0%, #6d28d9 50%, #be185d 100%); background-size: 160% 100%;
-  box-shadow: 0 4px 14px rgb(109 40 217 / .35); transition: background-position .4s ease, transform .1s ease; }
-.bk-ai-btn:hover:not(:disabled) { background-position: 100% 0; }
+  background: #2563eb; box-shadow: 0 4px 14px rgb(37 99 235 / .35); transition: background .15s ease, transform .1s ease; }
+.bk-ai-btn:hover:not(:disabled) { background: #1d4ed8; }
 .bk-ai-btn:active:not(:disabled) { transform: translateY(1px); }
-.bk-ai-btn:disabled { cursor: progress; opacity: .9; background: linear-gradient(100deg, #1e3a8a, #4c1d95, #831843); }
+.bk-ai-btn:disabled { cursor: progress; opacity: .85; background: #1e40af; }
 .bk-ai-btn__inner { display: inline-flex; align-items: center; gap: 8px; }
 .bk-ai-btn__icon { width: 20px; height: 20px; }
 .bk-ai-hint { font-size: 13px; color: var(--bk-muted); }
@@ -246,3 +245,10 @@ textarea.bk-input { resize: vertical; line-height: 1.45; }
 .dark .bk-demo__role { color: rgb(165 180 252); }
 .bk-demo__name { font-size: .8rem; }
 .bk-demo__mail { font-size: .7rem; color: rgb(100 116 139); }
+
+/* Дії зі штучним інтелектом: яскраво-сині кнопки з іконкою ✦ (Filament color 'ai' = Blue) */
+.fi-btn.bk-ai-action { background: #2563eb !important; color: #fff !important; box-shadow: 0 2px 8px rgb(37 99 235 / .35); }
+.fi-btn.bk-ai-action:hover { background: #1d4ed8 !important; }
+.fi-btn.bk-ai-action .fi-icon { color: #fff !important; }
+.bk-btn--ai { background: #2563eb; color: #fff; border-color: #2563eb; display: inline-flex; align-items: center; gap: 6px; }
+.bk-btn--ai:hover:not(:disabled) { background: #1d4ed8; }

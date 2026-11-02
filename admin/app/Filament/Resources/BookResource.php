@@ -152,7 +152,7 @@ class BookResource extends Resource
             ])
             ->recordActions([static::reviewAction(), EditAction::make()->label('')])
             ->toolbarActions([
-                BulkAction::make('recognize')->label('Розпізнати вибрані книги')->icon('heroicon-o-sparkles')
+                \App\Filament\Support\Ai::item(BulkAction::make('recognize')->label('Розпізнати вибрані книги'))
                     ->visible(fn () => auth()->user()->canOperate())->requiresConfirmation()
                     ->modalDescription('Нерозпізнані та помилкові сторінки вибраних книг буде поставлено в чергу Gemini AI.')
                     ->action(fn (Collection $books) => static::recognize($books)),

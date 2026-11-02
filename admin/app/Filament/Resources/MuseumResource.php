@@ -86,7 +86,7 @@ class MuseumResource extends Resource
             ->recordUrl(fn (Museum $r) => BookResource::getUrl('index', ['filters' => ['museum_id' => ['value' => $r->id]]]))
             ->recordActions([
                 // ТЗ 6.1: запуск розпізнавання для цілого музею (нові, помилкові й змінені сторінки всіх його книг)
-                Action::make('recognize')->label('Розпізнати музей')->icon('heroicon-o-sparkles')->color('gray')
+                \App\Filament\Support\Ai::button(Action::make('recognize')->label('Розпізнати книги'))
                     ->visible(fn () => auth()->user()->canOperate())
                     ->requiresConfirmation()->modalHeading(fn (Museum $record) => 'Розпізнати всі книги: '.$record->name)
                     ->modalDescription('У чергу підуть нерозпізнані, помилкові та змінені сторінки всіх доступних вам книг музею. Уже розпізнані сторінки не повторюються.')

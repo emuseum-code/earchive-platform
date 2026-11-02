@@ -191,7 +191,7 @@ class RecordResource extends Resource
                     }),
             ])
             ->toolbarActions([
-                BulkAction::make('adapt')->label('Адаптувати до реєстру')->icon('heroicon-o-arrows-right-left')
+                \App\Filament\Support\Ai::item(BulkAction::make('adapt')->label('Адаптувати до реєстру'))
                     ->visible(fn () => auth()->user()->canAdaptExport())->requiresConfirmation()
                     ->modalDescription('Адаптуються лише записи зі статусом «Перевірено». Неоднозначності буде передано верифікатору.')
                     ->action(function (Collection $records) {
