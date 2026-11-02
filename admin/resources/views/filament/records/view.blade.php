@@ -15,7 +15,7 @@
                 <span class="bk-badge bk-badge--{{ $r->export_status->getColor() }}">Експорт: {{ $r->export_status->getLabel() }}</span>
                 <span class="bk-badge bk-badge--gray">Версія {{ $r->lock_version }}</span>
             </div>
-            @if ($r->verified_at)<p class="bk-muted">Перевірив {{ $r->verifier?->name }} {{ $r->verified_at->format('d.m.Y H:i') }}, версія {{ $r->verified_version }}</p>@endif
+            @if ($r->verified_at)<p class="bk-muted">Перевірив {{ $r->verifier?->name }} {{ \App\Support\Tz::fmt($r->verified_at, 'd.m.Y H:i') }}, версія {{ $r->verified_version }}</p>@endif
             @foreach ($groups as $group => $fields)
                 <h4 class="bk-group">{{ $group }}</h4>
                 <dl class="bk-dl">
@@ -56,7 +56,7 @@
             <h3>Історія змін</h3>
             @foreach ($r->versions as $v)
                 <div class="bk-history">
-                    <div><strong>v{{ $v->version }}</strong> · {{ $v->source->getLabel() }} <span class="bk-muted">· {{ $v->user?->name ?? 'система' }} · {{ $v->created_at->format('d.m.Y H:i') }}</span></div>
+                    <div><strong>v{{ $v->version }}</strong> · {{ $v->source->getLabel() }} <span class="bk-muted">· {{ $v->user?->name ?? 'система' }} · {{ \App\Support\Tz::fmt($v->created_at, 'd.m.Y H:i') }}</span></div>
                     @if ($v->comment)<div class="bk-muted">{{ $v->comment }}</div>@endif
                     @foreach ($v->changes ?? [] as $field => [$old, $new])
                         <div class="bk-change"><span>{{ Record::label($field) }}:</span> <del>{{ is_array($old) ? json_encode($old, JSON_UNESCAPED_UNICODE) : ($old ?? '—') }}</del> → <ins>{{ is_array($new) ? json_encode($new, JSON_UNESCAPED_UNICODE) : ($new ?? '—') }}</ins></div>
@@ -68,7 +68,7 @@
             <h3>AI-перевірки</h3>
             @forelse ($r->aiChecks as $c)
                 <div class="bk-history">
-                    <div><span class="bk-badge bk-badge--{{ $c->status->getColor() }}">{{ $c->status->getLabel() }}</span> <span class="bk-muted">{{ $c->model }} · {{ $c->created_at->format('d.m.Y H:i') }} · {{ $c->whole_record ? 'увесь запис' : 'зауважень: '.count($c->remark_ids ?? []) }}</span></div>
+                    <div><span class="bk-badge bk-badge--{{ $c->status->getColor() }}">{{ $c->status->getLabel() }}</span> <span class="bk-muted">{{ $c->model }} · {{ \App\Support\Tz::fmt($c->created_at, 'd.m.Y H:i') }} · {{ $c->whole_record ? 'увесь запис' : 'зауважень: '.count($c->remark_ids ?? []) }}</span></div>
                     @if ($c->summary)<div class="bk-muted">{{ $c->summary }}</div>@endif
                     @foreach ($c->proposals as $p)
                         <div class="bk-change"><span>{{ Record::label($p->field) }}:</span> {{ $p->new_value ?? '—' }} <span class="bk-badge bk-badge--{{ $p->decision->getColor() }}">{{ $p->decision->getLabel() }}</span></div>
@@ -81,7 +81,7 @@
             @forelse ($r->remarks as $m)
                 <div class="bk-history"><span class="bk-badge bk-badge--{{ $m->status->getColor() }}">{{ $m->status->getLabel() }}</span> <strong>{{ $m->fieldLabel() }}</strong> — {{ $m->comment }}
                     @if ($m->suggested_value !== null) <span class="bk-muted">→ {{ $m->suggested_value }}</span>@endif
-                    <div class="bk-muted">{{ $m->user?->name }} · {{ $m->created_at->format('d.m.Y H:i') }}</div></div>
+                    <div class="bk-muted">{{ $m->user?->name }} · {{ \App\Support\Tz::fmt($m->created_at, 'd.m.Y H:i') }}</div></div>
             @empty <p class="bk-muted">Немає.</p> @endforelse
         </div>
     </div>

@@ -14,7 +14,7 @@
             <span class="bk-badge bk-badge--{{ $a->status->getColor() }}">{{ $a->status->getLabel() }}</span>
             <span class="bk-badge bk-badge--{{ $a->errors_count ? 'danger' : 'gray' }}">Помилок: {{ $a->errors_count }}</span>
             <span class="bk-badge bk-badge--{{ $a->warnings_count ? 'warning' : 'gray' }}">Неоднозначностей: {{ $a->warnings_count }}</span>
-            <span class="bk-muted">правила v{{ $a->rules_version }} @if ($a->confirmed_at)· підтвердив {{ $a->confirmer?->name }} {{ $a->confirmed_at->format('d.m.Y H:i') }}@endif</span>
+            <span class="bk-muted">правила v{{ $a->rules_version }} @if ($a->confirmed_at)· підтвердив {{ $a->confirmer?->name }} {{ \App\Support\Tz::fmt($a->confirmed_at, 'd.m.Y H:i') }}@endif</span>
         </div>
         <div class="bk-table-wrap">
             <table class="bk-table bk-table--adapt">

@@ -15,6 +15,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // у БД UTC, у таблицях, картках і полях дат Filament: київський час
+        \Filament\Support\Facades\FilamentTimezone::set(\App\Support\Tz::ZONE);
         Model::preventLazyLoading(! app()->isProduction());
         Model::automaticallyEagerLoadRelationships();
         Relation::enforceMorphMap([

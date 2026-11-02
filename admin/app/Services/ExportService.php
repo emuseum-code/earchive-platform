@@ -109,7 +109,7 @@ class ExportService
             [$r->uid, $r->museum?->name, $r->fund?->name, $r->book?->title, $r->pageLabel()],
             array_map(fn ($f) => $r->$f, array_keys(Record::FIELDS)),
             [$r->extra_fields ? json_encode($r->extra_fields, JSON_UNESCAPED_UNICODE) : null, $r->verification_status->getLabel(),
-                $r->adaptation_status->getLabel(), $r->lock_version, $r->verifier?->name, $r->verified_at?->format('Y-m-d H:i')]
+                $r->adaptation_status->getLabel(), $r->lock_version, $r->verifier?->name, \App\Support\Tz::fmt($r->verified_at, 'Y-m-d H:i')]
         ))->all();
 
         return [$header, $rows];

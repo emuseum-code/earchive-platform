@@ -38,7 +38,7 @@ class OverviewStats extends StatsOverviewWidget
         ];
         if ($u->isAdmin()) {
             $last = Backups::last();
-            $stats[] = Stat::make('Резервна копія бази', $last ? $last['time']?->format('d.m H:i') : 'ще немає')
+            $stats[] = Stat::make('Резервна копія бази', $last ? \App\Support\Tz::fmt($last['time'], 'd.m H:i') : 'ще немає')
                 ->description(Backups::healthy() ? 'перевірено, зберігаються 14 днів' : 'потрібна увага: див. Налаштування → Резервні копії')
                 ->color(Backups::healthy() ? 'success' : 'danger')->icon('heroicon-o-circle-stack')
                 ->url(\App\Filament\Pages\Settings::getUrl());

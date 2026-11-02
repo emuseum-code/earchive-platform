@@ -31,7 +31,9 @@ class InitStorage extends Command
         }
         File::ensureDirectoryExists($target);
         $before = Scan::count();
-        foreach ([storage_path('demo-scans'), storage_path('sample-scans')] as $src) {
+        // після очищення тестових даних (books:keep-only) демо-скани більше не копіюються
+        $demo = Settings::get('storage.demo_disabled') ? [] : [storage_path('demo-scans'), storage_path('sample-scans')];
+        foreach ($demo as $src) {
             if (! is_dir($src)) {
                 continue;
             }
@@ -49,7 +51,7 @@ class InitStorage extends Command
             $this->info("Коренева директорія: {$target}");
         }
         // нові папки зразків (наприклад, реальні скани пілоту) — одразу в базу
-        if (is_dir(storage_path('sample-scans'))) {
+        if ($demo && is_dir(storage_path('sample-scans'))) {
             $run = $sync->run(SyncRun::create(['scope_path' => '', 'status' => 'queued']));
             $this->info('Синхронізація: нових сканів '.(int) $run->new_scans.', усього було '.$before);
         }

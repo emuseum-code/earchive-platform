@@ -18,6 +18,7 @@ use App\Services\QueueManager;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -124,6 +125,29 @@ class RecordResource extends Resource
         ]);
     }
 
+    /** Час у таблиці показуємо за Києвом (у БД UTC). */
+    public const TZ = \App\Support\Tz::ZONE;
+
+    public static function addedFilter($query, array $data)
+    {
+        $now = now(static::TZ);
+        $since = match ($data['period'] ?? null) {
+            '1h' => $now->copy()->subHour(), 'today' => $now->copy()->startOfDay(), '24h' => $now->copy()->subDay(),
+            '7d' => $now->copy()->subDays(7), '30d' => $now->copy()->subDays(30), default => null,
+        };
+        if ($since) {
+            $query->where('created_at', '>=', $since->utc());
+        }
+        if ($data['from'] ?? null) {
+            $query->where('created_at', '>=', \Carbon\Carbon::parse($data['from'], static::TZ)->startOfDay()->utc());
+        }
+        if ($data['to'] ?? null) {
+            $query->where('created_at', '<=', \Carbon\Carbon::parse($data['to'], static::TZ)->endOfDay()->utc());
+        }
+
+        return $query;
+    }
+
     public static function table(Table $table): Table
     {
         $cols = [
@@ -149,6 +173,8 @@ class RecordResource extends Resource
         $cols[] = TextColumn::make('uncertain_fields')->label('Нерозбірливо')->state(fn (Record $r) => count($r->uncertain_fields ?? []) ?: null)
             ->badge()->color('warning')->toggleable();
         $cols[] = TextColumn::make('lock_version')->label('Версія')->alignEnd()->toggleable(isToggledHiddenByDefault: true);
+        $cols[] = TextColumn::make('created_at')->label('Додано')->dateTime('d.m.Y H:i')->timezone(static::TZ)->sortable()
+            ->size('xs')->toggleable();
         $cols[] = TextColumn::make('updated_at')->label('Змінено')->since()->sortable()->toggleable(isToggledHiddenByDefault: true);
 
         return $table
@@ -171,6 +197,30 @@ class RecordResource extends Resource
                 SelectFilter::make('export_status')->label('Експорт')->options(ExportStatus::options())->multiple(),
                 TernaryFilter::make('possible_duplicate')->label('Можливий дублікат'),
                 Filter::make('uncertain')->label('Є нерозбірливі поля')->query(fn ($query) => $query->whereNotNull('uncertain_fields')),
+                Filter::make('added')->label('Додано')
+                    ->schema([
+                        Select::make('period')->label('Додано')->placeholder('За весь час')->options([
+                            '1h' => 'За останню годину', 'today' => 'Сьогодні', '24h' => 'За добу', '7d' => 'За 7 днів', '30d' => 'За 30 днів',
+                        ]),
+                        DatePicker::make('from')->label('Додано з')->native(false)->displayFormat('d.m.Y'),
+                        DatePicker::make('to')->label('Додано по')->native(false)->displayFormat('d.m.Y'),
+                    ])
+                    ->columns(3)->columnSpan(3)
+                    ->query(fn ($query, array $data) => static::addedFilter($query, $data))
+                    ->indicateUsing(function (array $data): array {
+                        $out = [];
+                        if ($data['period'] ?? null) {
+                            $out[] = 'Додано: '.mb_strtolower(['1h' => 'За останню годину', 'today' => 'Сьогодні', '24h' => 'За добу', '7d' => 'За 7 днів', '30d' => 'За 30 днів'][$data['period']] ?? '');
+                        }
+                        if ($data['from'] ?? null) {
+                            $out[] = 'Додано з '.\Carbon\Carbon::parse($data['from'])->format('d.m.Y');
+                        }
+                        if ($data['to'] ?? null) {
+                            $out[] = 'Додано по '.\Carbon\Carbon::parse($data['to'])->format('d.m.Y');
+                        }
+
+                        return $out;
+                    }),
                 Filter::make('open_remarks')->label('Є відкриті зауваження')->query(fn ($query) => $query->whereHas('openRemarks')),
             ])
             ->filtersFormColumns(3)

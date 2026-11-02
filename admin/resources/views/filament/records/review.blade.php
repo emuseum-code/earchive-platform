@@ -255,7 +255,7 @@
                         @if (isset($remarkNo[$r->id]))<span class="bk-frag__n">{{ $remarkNo[$r->id] }}</span>@endif
                         <span class="bk-badge bk-badge--{{ $r->status->getColor() }}">{{ $r->status->getLabel() }}</span>
                         <strong>{{ $r->fieldLabel() }}</strong>
-                        <span class="bk-muted">{{ $r->user?->name }} · {{ $r->created_at->format('d.m.Y H:i') }}</span>
+                        <span class="bk-muted">{{ $r->user?->name }} · {{ \App\Support\Tz::fmt($r->created_at, 'd.m.Y H:i') }}</span>
                         @if ($r->region)<button type="button" class="bk-link" wire:click="showRegion(@js($r->region))">показати на скані</button>@endif
                     </div>
                     @if ($r->fragment)<p class="bk-muted">Позначено в тексті: <mark class="bk-mark">{{ $r->fragment['text'] }}</mark></p>@endif
@@ -268,7 +268,7 @@
                                 <button type="button" class="bk-btn bk-btn--success" wire:click="setRemarkStatus({{ $r->id }}, 'resolved')">Закрити</button>
                                 <button type="button" class="bk-btn" wire:click="setRemarkStatus({{ $r->id }}, 'dismissed')">Відхилити</button>
                             @else
-                                <span class="bk-muted">{{ $r->resolver?->name }} · {{ $r->resolved_at?->format('d.m.Y H:i') }}</span>
+                                <span class="bk-muted">{{ $r->resolver?->name }} · {{ \App\Support\Tz::fmt($r->resolved_at, 'd.m.Y H:i') }}</span>
                                 <button type="button" class="bk-link" wire:click="setRemarkStatus({{ $r->id }}, 'open')">Відкрити знову</button>
                             @endif
                         </div>
