@@ -30,7 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->profile(isSimple: false)
-            ->brandName('Облік інвентарних книг')
+            ->brandName('eBooks: Облік інвентарних книг')
             ->favicon(asset('favicon.svg'))
             ->colors(['primary' => Color::Indigo, 'gray' => Color::Slate])
             ->defaultAvatarProvider(\App\Filament\LocalAvatarProvider::class)
@@ -53,7 +53,8 @@ class AdminPanelProvider extends PanelProvider
             ->pages([Dashboard::class])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([])
-            ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render('<link rel="stylesheet" href="{{ asset(\'css/books.css\') }}?v=2">'))
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render('<link rel="stylesheet" href="{{ asset(\'css/books.css\') }}?v=5">'))
+            ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => config('services.demo_login') ? view('filament.partials.demo-login') : '')
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => view('filament.partials.account'))
             ->middleware([
                 EncryptCookies::class,

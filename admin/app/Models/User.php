@@ -14,6 +14,9 @@ use Illuminate\Notifications\Notifiable;
 /** Персональний акаунт працівника (ТЗ 5): роль і межі доступу музеями та книгами. */
 class User extends Authenticatable implements FilamentUser
 {
+    /** Демо-акаунти для кнопок швидкого входу на сторінці логіну. */
+    public const DEMO_LOGINS = ['admin@books.test', 'operator@books.test', 'verifier@books.test', 'viewer@books.test'];
+
     use HasFactory, Notifiable;
 
     protected $guarded = ['id'];
