@@ -84,8 +84,13 @@ class Settings extends Page
                     ? '<span style="color:#15803d">✓ GEMINI_API_KEY задано на сервері</span>'
                     : '<span style="color:#b91c1c">GEMINI_API_KEY не задано.</span> Ключ додається лише в .env на сервері, не в адмінці.')),
                 Grid::make(3)->schema([
-                    TextInput::make('ai.model')->label('Модель розпізнавання')->required(),
-                    TextInput::make('ai.check_model')->label('Модель «Перевірити AI»')->required(),
+                    TextInput::make('ai.model')->label('Модель розпізнавання')->required()->datalist(fn () => $this->geminiModels())
+                        ->helperText('Якщо Google вимкне модель, система сама перейде на найновішу Pro.')
+                        ->suffixAction(\Filament\Actions\Action::make('latestModel')->icon('heroicon-s-sparkles')->tooltip('Найновіша Pro від Google')
+                            ->action(fn ($set) => ($m = app(\App\Services\GeminiClient::class)->bestModel('pro')) ? $set('ai.model', $m) : null)),
+                    TextInput::make('ai.check_model')->label('Модель «Перевірити AI»')->required()->datalist(fn () => $this->geminiModels())
+                        ->suffixAction(\Filament\Actions\Action::make('latestCheckModel')->icon('heroicon-s-sparkles')->tooltip('Найновіша Pro від Google')
+                            ->action(fn ($set) => ($m = app(\App\Services\GeminiClient::class)->bestModel('pro')) ? $set('ai.check_model', $m) : null)),
                     TextInput::make('ai.temperature')->label('Температура')->numeric()->step(0.05)->minValue(0)->maxValue(1),
                     TextInput::make('ai.max_output_tokens')->label('Макс. токенів відповіді')->numeric(),
                     TextInput::make('ai.timeout')->label('Тайм-аут запиту, с')->numeric(),
@@ -129,5 +134,15 @@ class Settings extends Page
         }
         Activity::log('settings.updated', null, 'Збережено налаштування', ['keys' => array_keys(Arr::dot($state))]);
         Notification::make()->success()->title('Налаштування збережено')->send();
+    }
+
+    /** Моделі, доступні з цим ключем (кеш 1 год). */
+    public function geminiModels(): array
+    {
+        if (! S::geminiKey()) {
+            return [];
+        }
+
+        return cache()->remember('gemini.models', 3600, fn () => app(\App\Services\GeminiClient::class)->availableModels());
     }
 }
