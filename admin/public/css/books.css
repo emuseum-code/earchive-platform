@@ -224,3 +224,9 @@ textarea.bk-input { resize: vertical; line-height: 1.45; }
 .bk-account__logout:hover { background: rgb(220 38 38 / .08); border-color: rgb(220 38 38 / .4); color: var(--bk-danger); }
 .bk-account__logout svg { width: 16px; height: 16px; }
 @media (max-width: 720px) { .bk-account__who { display: none; } .bk-account__logout span { display: none; } }
+
+/* Таблиці із заголовком (віджети Огляду, сторінки книги): пошук у тому ж рядку, що й заголовок */
+.fi-ta-header-ctn:has(> .fi-ta-header) { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.fi-ta-header-ctn:has(> .fi-ta-header) > * { border-top-width: 0 !important; border-bottom-width: 0 !important; }
+.fi-ta-header-ctn:has(> .fi-ta-header) > .fi-ta-header { flex: 1 1 260px; }
+.fi-ta-header-ctn:has(> .fi-ta-header) > .fi-ta-header-toolbar { flex: 0 1 auto; margin-left: auto; }

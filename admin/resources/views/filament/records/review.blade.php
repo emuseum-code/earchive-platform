@@ -211,7 +211,7 @@
                             @if ($pencil && ! $pendingFragment)<div class="bk-pencil-hint">✎ Виділіть мишею текст, що не збігається зі сканом</div>@endif
                             @foreach ($frags as $fr)
                                 @php $parts = \App\Models\ReviewRemark::splitFragment($data[$key] ?? null, $fr['f']); @endphp
-                                <div class="bk-frag" @if ($fr['region']) role="button" tabindex="0" title="Показати на скані" wire:click="$set('highlight', @js($fr['region']))" @endif>
+                                <div class="bk-frag" @if ($fr['region']) role="button" tabindex="0" title="Показати на скані" wire:click="showRegion(@js($fr['region']))" @endif>
                                     <span class="bk-frag__n">{{ $fr['n'] }}</span>
                                     @if ($parts)<span>{{ $cut($parts[0], 40, true) }}<mark class="bk-mark">{{ $parts[1] }}</mark>{{ $cut($parts[2], 40, false) }}</span>
                                     @else <span>Позначено: <mark class="bk-mark">{{ $fr['f']['text'] }}</mark> <span class="bk-muted">(у полі вже виправлено)</span></span>@endif
@@ -256,7 +256,7 @@
                         <span class="bk-badge bk-badge--{{ $r->status->getColor() }}">{{ $r->status->getLabel() }}</span>
                         <strong>{{ $r->fieldLabel() }}</strong>
                         <span class="bk-muted">{{ $r->user?->name }} · {{ $r->created_at->format('d.m.Y H:i') }}</span>
-                        @if ($r->region)<button type="button" class="bk-link" wire:click="$set('highlight', @js($r->region))">показати на скані</button>@endif
+                        @if ($r->region)<button type="button" class="bk-link" wire:click="showRegion(@js($r->region))">показати на скані</button>@endif
                     </div>
                     @if ($r->fragment)<p class="bk-muted">Позначено в тексті: <mark class="bk-mark">{{ $r->fragment['text'] }}</mark></p>@endif
                     @if ($r->comment)<p>{{ $r->comment }}</p>@endif

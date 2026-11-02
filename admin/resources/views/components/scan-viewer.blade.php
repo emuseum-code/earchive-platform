@@ -41,12 +41,23 @@
             this.drag = null;
         },
         box(b) { return b ? `left:${b.x * 100}%;top:${b.y * 100}%;width:${b.w * 100}%;height:${b.h * 100}%` : 'display:none' },
+        // Підвести виділене місце в центр вікна (при збільшенні інакше його не видно)
+        center() {
+            const h = this.highlight, img = this.$refs.img;
+            if (!h || !img || !this.hlOnThis()) return;
+            if (!img.complete || !img.offsetWidth) { img.addEventListener('load', () => this.center(), { once: true }); return; }
+            if (this.zoom <= 1) { this.x = 0; this.y = 0; return; }
+            const dx = (h.x + h.w / 2 - 0.5) * img.offsetWidth, dy = (h.y + h.h / 2 - 0.5) * img.offsetHeight;
+            const a = this.rot * Math.PI / 180, rx = dx * Math.cos(a) - dy * Math.sin(a), ry = dx * Math.sin(a) + dy * Math.cos(a);
+            this.x = -rx * this.zoom; this.y = -ry * this.zoom;
+        },
         hlOnThis() { return this.highlight && this.scan && (!this.highlight.scan_id || this.highlight.scan_id === this.scan.id) },
      }"
-     x-init="$watch('highlight', h => { if (h && h.scan_id) { const i = scans.findIndex(s => s.id === h.scan_id); if (i >= 0 && i !== idx) { idx = i; reset() } } })"
+     x-init="$watch('highlight', h => { if (h && h.scan_id) { const i = scans.findIndex(s => s.id === h.scan_id); if (i >= 0 && i !== idx) { idx = i; reset() } } $nextTick(() => center()) })"
      @keydown.window="if (['INPUT','TEXTAREA','SELECT'].includes($event.target.tagName)) return;
         if ($event.key === 'ArrowRight' && $event.altKey) go(1); if ($event.key === 'ArrowLeft' && $event.altKey) go(-1)"
      @mouseup.window="up()"
+     @bk-center.window="$nextTick(() => center())"
      @if ($selectable) @bk-pencil.window="selecting = true; sel = null" @endif>
 
     <div class="bk-viewer__bar">

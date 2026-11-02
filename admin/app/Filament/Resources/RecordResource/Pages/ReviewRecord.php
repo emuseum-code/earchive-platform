@@ -182,6 +182,14 @@ class ReviewRecord extends Page
             $region['scan_id'] ??= $this->record->scans()->value('scans.id');
         }
         $this->highlight = $region;
+        $this->dispatch('bk-center');
+    }
+
+    /** «Показати на скані» для зауваження: підсвітити й поставити область у центр переглядача. */
+    public function showRegion(array $region): void
+    {
+        $this->highlight = $region;
+        $this->dispatch('bk-center');
     }
 
     public function openRemark(string $type = 'field', ?string $field = null): void
