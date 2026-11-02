@@ -109,12 +109,33 @@ class StorageSync
             $out[$rel][] = $file->getFilename();
         }
         foreach ($out as &$files) {
-            natcasesort($files);
+            // обкладинка («обложка.JPG») завжди перша, остання сторінка («посл.стр..JPG») — остання,
+            // решта (зазвичай IMG_0001.JPG від камери) — у природному порядку
+            usort($files, fn ($a, $b) => [self::pageKindRank($a), strnatcasecmp($a, $b)] <=> [self::pageKindRank($b), 0]);
             $files = array_values($files);
         }
         ksort($out, SORT_NATURAL);
 
         return $out;
+    }
+
+    /** Вид сторінки за назвою файлу: обкладинка, остання сторінка чи звичайний розворот. */
+    public static function pageKind(string $filename): string
+    {
+        $name = mb_strtolower(pathinfo($filename, PATHINFO_FILENAME));
+        if (preg_match('~^(обложка|обкладинка|обкл|cover)~u', $name)) {
+            return 'cover';
+        }
+        if (preg_match('~^(посл|остання|останн|last)~u', $name)) {
+            return 'last';
+        }
+
+        return 'content';
+    }
+
+    private static function pageKindRank(string $filename): int
+    {
+        return ['cover' => 0, 'content' => 1, 'last' => 2][self::pageKind($filename)];
     }
 
     /** Рівень сегмента шляху за правилами: шаблон назви має пріоритет над глибиною. */
@@ -220,6 +241,7 @@ class StorageSync
                     Scan::create([
                         'book_id' => $book->id, 'path' => $path, 'filename' => $name,
                         'page_order' => $existing->isEmpty() ? $i + 1 : ++$maxOrder,
+                        'page_kind' => self::pageKind($name),
                         'file_size' => $size, 'file_mtime' => date('Y-m-d H:i:s', $mtime), 'checksum' => $checksum,
                         'width' => $dims[0] ?? null, 'height' => $dims[1] ?? null,
                         'file_status' => $status, 'last_seen_at' => now(),

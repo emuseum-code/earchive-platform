@@ -41,7 +41,8 @@ class QueueManager
     /** @param iterable<\App\Models\Scan> $scans */
     public function enqueueRecognition(iterable $scans, ?User $user): array
     {
-        $scans = collect($scans)->filter(fn ($scan) => $scan->file_status->value === 'present');
+        // обкладинку не розпізнаємо: записів на ній немає
+        $scans = collect($scans)->filter(fn ($scan) => $scan->file_status->value === 'present' && $scan->page_kind !== 'cover');
         // ТЗ 18.1: спершу тестовий запуск, масову обробку адміністратор дозволяє окремо
         $limit = (int) Settings::get('ai.test_scan_limit');
         if (! Settings::get('ai.mass_processing_allowed') && $scans->count() > $limit) {

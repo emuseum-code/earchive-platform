@@ -18,7 +18,7 @@ class Scan extends Model
 
     protected $guarded = ['id'];
 
-    protected $attributes = ['file_status' => 'present', 'recognition_status' => 'none', 'needs_recheck' => false];
+    protected $attributes = ['file_status' => 'present', 'recognition_status' => 'none', 'needs_recheck' => false, 'page_kind' => 'content'];
 
     protected function casts(): array
     {

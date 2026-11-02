@@ -45,6 +45,7 @@ class ScansRelationManager extends RelationManager
                 ImageColumn::make('thumb')->label('')->state(fn (Scan $s) => $s->file_status === FileStatus::Present ? $s->thumbUrl() : null)
                     ->imageHeight(64)->extraImgAttributes(['loading' => 'lazy', 'class' => 'rounded border']),
                 TextColumn::make('filename')->label('Файл')->searchable()->fontFamily('mono')->size('xs')
+                    ->description(fn ($record) => ['cover' => 'Обкладинка: не розпізнається', 'last' => 'Остання сторінка (засвідчувальний напис)'][$record->page_kind] ?? null)
                     ->description(fn (Scan $s) => $s->page_label),
                 TextColumn::make('file_status')->label('Файл')->badge(),
                 TextColumn::make('recognition_status')->label('Розпізнавання')->badge()

@@ -8,4 +8,9 @@ use Filament\Resources\Pages\ListRecords;
 class ListBooks extends ListRecords
 {
     protected static string $resource = BookResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [BookResource::uploadAction()];
+    }
 }

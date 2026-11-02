@@ -29,6 +29,7 @@ class ViewBook extends ViewRecord
                 ->url(RecordResource::getUrl('index', ['filters' => ['book_id' => ['value' => $this->record->id]]])),
             Action::make('pages')->label('Переглянути сторінки')->icon('heroicon-o-photo')->color('gray')
                 ->url(BookResource::getUrl('pages', ['record' => $this->record])),
+            BookResource::uploadAction($this->record),
             ActionGroup::make([
                 Action::make('recognize')->label('Розпізнати нові та помилкові сторінки')->icon('heroicon-o-sparkles')
                     ->requiresConfirmation()->action(fn () => BookResource::recognize([$this->record])),

@@ -16,6 +16,7 @@ use App\Services\QueueManager;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -169,6 +170,81 @@ class BookResource extends Resource
 
                 return $r ? RecordResource::getUrl('review', ['record' => $r]) : null;
             });
+    }
+
+    /**
+     * Завантаження сканів з браузера (сховище на зовнішніх дисках, як у пілоті Лисичанська).
+     * Файли кладуться в папку книги в кореневій директорії, далі звичайна синхронізація цієї папки.
+     * $book = null: нова книга (музей, фонд, назва).
+     */
+    public static function uploadAction(?Book $book = null): Action
+    {
+        $new = $book === null;
+
+        return Action::make($new ? 'uploadNewBook' : 'uploadScans')
+            ->label($new ? 'Нова книга зі сканів' : 'Завантажити скани')
+            ->icon('heroicon-o-arrow-up-tray')
+            ->color($new ? 'primary' : 'gray')
+            ->visible(fn () => auth()->user()->canOperate())
+            ->modalHeading($new ? 'Нова книга: завантажити скани' : 'Завантажити скани в книгу')
+            ->modalDescription('JPG, PNG або TIFF, до 50 МБ кожен. Порядок сторінок: «обложка» перша, «посл.стр.» остання, решта за назвою файлу (IMG_0001, IMG_0002…).')
+            ->modalSubmitActionLabel('Завантажити')
+            ->schema(array_filter([
+                $new ? Select::make('museum_id')->label('Музей')->required()->searchable()->preload()->live()
+                    ->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id')) : null,
+                $new ? Select::make('fund_id')->label('Фонд / група збереження')->searchable()
+                    ->options(fn (Get $get) => Fund::where('museum_id', $get('museum_id'))->orderBy('name')->pluck('name', 'id')) : null,
+                $new ? TextInput::make('title')->label('Назва книги')->required()->maxLength(200)
+                    ->placeholder('Інвентарна книга Д-ІІІ (документи)') : null,
+                FileUpload::make('files')->label('Скани')->required()->multiple()->storeFiles(false)
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/tiff'])->maxSize(51200)->maxFiles(500)
+                    ->panelLayout('grid')->reorderable(false),
+            ]))
+            ->action(function (array $data) use ($book) {
+                $root = rtrim((string) \App\Support\Settings::get('storage.root'), '/');
+                if ($root === '' || ! is_dir($root) || ! is_writable($root)) {
+                    Notification::make()->danger()->title('Сховище недоступне для запису')->body($root ?: 'Коренева директорія не задана')->send();
+
+                    return;
+                }
+                $book ??= static::createUploadedBook($data);
+                $dir = $root.'/'.$book->folder_path;
+                \Illuminate\Support\Facades\File::ensureDirectoryExists($dir);
+                $saved = 0;
+                foreach ((array) $data['files'] as $file) {
+                    $name = preg_replace('~[/\\\\\x00]~u', '_', basename($file->getClientOriginalName())) ?: 'scan.jpg';
+                    $target = $dir.'/'.$name;
+                    for ($i = 2; file_exists($target) && md5_file($target) !== md5_file($file->getRealPath()); $i++) {
+                        $target = $dir.'/'.pathinfo($name, PATHINFO_FILENAME)."-{$i}.".pathinfo($name, PATHINFO_EXTENSION);
+                    }
+                    if (! file_exists($target)) {
+                        copy($file->getRealPath(), $target);
+                        $saved++;
+                    }
+                }
+                $run = \App\Models\SyncRun::create(['user_id' => auth()->id(), 'scope_path' => $book->folder_path, 'status' => 'queued']);
+                \App\Support\Activity::log('scans.uploaded', $book, "Завантажено сканів: {$saved}");
+                $run = app(\App\Services\StorageSync::class)->run($run);
+                Notification::make()->success()->title("Завантажено сканів: {$saved}")
+                    ->body("Нових сторінок у книзі: {$run->new_scans}. Тепер їх можна розпізнати (Обробка → Розпізнати).")->send();
+
+                return redirect(static::getUrl('view', ['record' => $book]));
+            });
+    }
+
+    private static function createUploadedBook(array $data): Book
+    {
+        $museum = Museum::findOrFail($data['museum_id']);
+        $fund = ! empty($data['fund_id']) ? Fund::find($data['fund_id']) : null;
+        $base = $museum->folder_path ?: 'Завантажено/'.$museum->name;
+        $base = $fund ? ($fund->folder_path ?: $base.'/'.$fund->name) : $base;
+        $slug = trim(preg_replace('~[/\\\\:*?"<>|]+~u', ' ', $data['title']));
+        $path = $base.'/'.$slug;
+        for ($i = 2; Book::withTrashed()->where('folder_path', $path)->exists(); $i++) {
+            $path = $base.'/'.$slug." ({$i})";
+        }
+
+        return Book::create(['museum_id' => $museum->id, 'fund_id' => $fund?->id, 'title' => $data['title'], 'folder_path' => $path]);
     }
 
     public static function recognize($books, bool $onlyNew = true): void

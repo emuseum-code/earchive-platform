@@ -19,6 +19,8 @@ if [ "${RUN_MIGRATIONS:-0}" = "1" ]; then
     fi
     # demo users always get the current ADMIN_PASSWORD (the secret may change after the first seed)
     php artisan books:demo-password || true
+    # скани в постійному томі + зразки реальних сканів (див. app/Console/Commands/InitStorage.php)
+    php artisan books:storage-init || true
     php artisan config:cache && php artisan route:cache && php artisan view:cache
 fi
 # artisan above runs as root; php-fpm (www-data) must be able to write the caches, logs, thumbnails and exports
