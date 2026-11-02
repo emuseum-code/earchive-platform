@@ -21,11 +21,8 @@ if [ "${RUN_MIGRATIONS:-0}" = "1" ]; then
     php artisan books:demo-password || true
     # скани в постійному томі + зразки реальних сканів (див. app/Console/Commands/InitStorage.php)
     # одноразово: прибрати тестові дані, залишити лише реальні книги (KEEP_BOOKS, через «|»)
-    if [ -n "${KEEP_BOOKS:-Test2}" ]; then
-        OLDIFS=$IFS; IFS='|'; set -- ${KEEP_BOOKS:-Test2}; IFS=$OLDIFS
-        php artisan books:keep-only "$@" || true
-        set --
-    fi
+    # у підоболонці, щоб не зіпсувати "$@" (команду контейнера для exec нижче)
+    ( IFS='|'; set -- ${KEEP_BOOKS:-Test2}; php artisan books:keep-only "$@" ) || true
     php artisan books:storage-init || true
     php artisan config:cache && php artisan route:cache && php artisan view:cache
 fi
