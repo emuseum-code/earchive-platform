@@ -19,6 +19,61 @@ class GeminiClient
      */
     public function generateJson(string $operation, array $parts, array $schema, ?string $model = null, ?int $jobId = null, ?int $userId = null): array
     {
+        try {
+            return $this->callModel($operation, $parts, $schema, $model, $jobId, $userId);
+        } catch (AiException $e) {
+            // Google вимикає старі моделі (404 «no longer available»): беремо найновішу Pro зі списку моделей і повторюємо
+            if (! str_contains($e->getMessage(), 'помилку 404') || ! ($fresh = $this->replaceRetiredModel($model ?? Settings::get('ai.model')))) {
+                throw $e;
+            }
+
+            return $this->callModel($operation, $parts, $schema, $fresh, $jobId, $userId);
+        }
+    }
+
+    /** Список моделей Gemini, що вміють generateContent (без TTS, зображень, ембедингів). */
+    public function availableModels(): array
+    {
+        $resp = Http::timeout(20)->withHeaders(['x-goog-api-key' => (string) Settings::geminiKey()])
+            ->get(rtrim(config('services.gemini.endpoint'), '/').'/models', ['pageSize' => 1000]);
+        if (! $resp->successful()) {
+            return [];
+        }
+
+        return collect($resp->json('models', []))
+            ->filter(fn ($m) => in_array('generateContent', $m['supportedGenerationMethods'] ?? [], true))
+            ->map(fn ($m) => \Illuminate\Support\Str::after($m['name'], 'models/'))
+            ->filter(fn ($n) => str_starts_with($n, 'gemini-') && ! preg_match('~tts|image|embed|live|audio|computer|robotics|learnlm|nano~', $n))
+            ->values()->all();
+    }
+
+    /** Найновіша модель тієї ж лінійки (pro / flash): стабільна має перевагу над preview. */
+    public function bestModel(string $family = 'pro'): ?string
+    {
+        return collect($this->availableModels())
+            ->filter(fn ($n) => str_contains($n, "-{$family}"))
+            ->sortByDesc(fn ($n) => sprintf('%06.2f-%d', (float) (preg_match('~gemini-(\d+(?:\.\d+)?)~', $n, $m) ? $m[1] : 0), preg_match('~preview|exp~', $n) ? 0 : 1))
+            ->first();
+    }
+
+    private function replaceRetiredModel(string $old): ?string
+    {
+        $fresh = $this->bestModel(str_contains($old, 'flash') ? 'flash' : 'pro');
+        if (! $fresh || $fresh === $old) {
+            return null;
+        }
+        foreach (['ai.model', 'ai.check_model'] as $key) {
+            if (Settings::get($key) === $old) {
+                Settings::set($key, $fresh);
+            }
+        }
+        \App\Support\Activity::log('ai.model_replaced', null, "Модель {$old} більше не доступна, перейшли на {$fresh}");
+
+        return $fresh;
+    }
+
+    private function callModel(string $operation, array $parts, array $schema, ?string $model, ?int $jobId, ?int $userId): array
+    {
         $key = Settings::geminiKey();
         if (! $key) {
             throw new AiException('Ключ Gemini AI не налаштовано на сервері (GEMINI_API_KEY).');
