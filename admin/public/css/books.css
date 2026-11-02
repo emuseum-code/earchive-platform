@@ -230,3 +230,6 @@ textarea.bk-input { resize: vertical; line-height: 1.45; }
 .fi-ta-header-ctn:has(> .fi-ta-header) > * { border-top-width: 0 !important; border-bottom-width: 0 !important; }
 .fi-ta-header-ctn:has(> .fi-ta-header) > .fi-ta-header { flex: 1 1 260px; }
 .fi-ta-header-ctn:has(> .fi-ta-header) > .fi-ta-header-toolbar { flex: 0 1 auto; margin-left: auto; }
+
+/* Вкладки-фільтри над таблицями (Усі / Не перевірено / …): притиснуті ліворуч, а не по центру */
+.fi-sc-tabs > .fi-tabs { margin-left: 0; margin-right: auto; }
