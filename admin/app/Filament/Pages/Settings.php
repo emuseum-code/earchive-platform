@@ -65,6 +65,8 @@ class Settings extends Page
                     Select::make('storage.schedule')->label('Синхронізація за розкладом')
                         ->options(['off' => 'Вимкнено', 'hourly' => 'Щогодини', 'daily' => 'Щодня о 02:00', 'weekly' => 'Щонеділі о 03:00']),
                     Toggle::make('storage.checksum')->label('Рахувати SHA-256 при кожній синхронізації'),
+                    TextInput::make('storage.upload_max_px')->label('Зменшувати скани з браузера до, px')->numeric()->minValue(0)
+                        ->helperText('Довша сторона зображення. Зменшення відбувається в браузері, тож на сервер іде легший файл. 0 — завантажувати оригінали.'),
                     Toggle::make('storage.allow_create_folders')->label('Фізичне створення папок з адмінки')->disabled()
                         ->helperText('Лише після окремого підтвердження Замовника (ТЗ 4.2).'),
                 ]),
