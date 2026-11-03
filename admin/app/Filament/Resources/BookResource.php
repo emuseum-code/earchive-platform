@@ -174,7 +174,8 @@ class BookResource extends Resource
 
     /**
      * Завантаження сканів з браузера (сховище на зовнішніх дисках, як у пілоті Лисичанська).
-     * Файли кладуться в папку книги в кореневій директорії, далі звичайна синхронізація цієї папки.
+     * Файли кладуться в папку книги в кореневій директорії й одразу реєструються як сторінки, без синхронізації.
+     * Браузер зменшує зображення до storage.upload_max_px (довша сторона) ще до відправлення на сервер.
      * $book = null: нова книга (музей, фонд, назва).
      */
     public static function uploadAction(?Book $book = null): Action
@@ -187,7 +188,8 @@ class BookResource extends Resource
             ->color($new ? 'primary' : 'gray')
             ->visible(fn () => auth()->user()->canOperate())
             ->modalHeading($new ? 'Нова книга: завантажити скани' : 'Завантажити скани в книгу')
-            ->modalDescription('JPG, PNG або TIFF, до 50 МБ кожен. Порядок сторінок: «обложка» перша, «посл.стр.» остання, решта за назвою файлу (IMG_0001, IMG_0002…).')
+            ->modalDescription(fn () => 'JPG, PNG або TIFF, до 50 МБ кожен. Порядок сторінок: «обложка» перша, «посл.стр.» остання, решта за назвою файлу (IMG_0001, IMG_0002…).'
+                .(static::uploadMaxPx() ? ' JPG і PNG зменшуються в браузері до '.static::uploadMaxPx().' px по довшій стороні.' : ''))
             ->modalSubmitActionLabel('Завантажити')
             ->schema(array_filter([
                 $new ? Select::make('museum_id')->label('Музей')->required()->searchable()->preload()->live()
@@ -198,7 +200,11 @@ class BookResource extends Resource
                     ->placeholder('Інвентарна книга Д-ІІІ (документи)') : null,
                 FileUpload::make('files')->label('Скани')->required()->multiple()->storeFiles(false)
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/tiff'])->maxSize(51200)->maxFiles(500)
-                    ->panelLayout('grid')->reorderable(false),
+                    ->panelLayout('grid')->reorderable(false)->previewable(false)
+                    ->imageResizeMode(fn () => static::uploadMaxPx() ? 'contain' : null)
+                    ->imageResizeTargetWidth(fn () => static::uploadMaxPx() ?: null)
+                    ->imageResizeTargetHeight(fn () => static::uploadMaxPx() ?: null)
+                    ->imageResizeUpscale(false),
             ]))
             ->action(function (array $data) use ($book) {
                 $root = rtrim((string) \App\Support\Settings::get('storage.root'), '/');
@@ -211,6 +217,7 @@ class BookResource extends Resource
                 $dir = $root.'/'.$book->folder_path;
                 \Illuminate\Support\Facades\File::ensureDirectoryExists($dir);
                 $saved = 0;
+                $names = [];
                 foreach ((array) $data['files'] as $file) {
                     $name = preg_replace('~[/\\\\\x00]~u', '_', basename($file->getClientOriginalName())) ?: 'scan.jpg';
                     $target = $dir.'/'.$name;
@@ -221,15 +228,23 @@ class BookResource extends Resource
                         copy($file->getRealPath(), $target);
                         $saved++;
                     }
+                    $names[] = basename($target);
                 }
-                $run = \App\Models\SyncRun::create(['user_id' => auth()->id(), 'scope_path' => $book->folder_path, 'status' => 'queued']);
-                \App\Support\Activity::log('scans.uploaded', $book, "Завантажено сканів: {$saved}");
-                $run = app(\App\Services\StorageSync::class)->run($run);
-                Notification::make()->success()->title("Завантажено сканів: {$saved}")
-                    ->body("Нових сторінок у книзі: {$run->new_scans}. Тепер їх можна розпізнати (Обробка → Розпізнати).")->send();
+                // без синхронізації: реєструються лише щойно завантажені файли цієї книги
+                [$new, $errors] = app(\App\Services\StorageSync::class)->registerUploaded($book, array_values(array_unique($names)));
+                \App\Support\Activity::log('scans.uploaded', $book, "Завантажено сканів: {$saved}, нових сторінок: {$new}");
+                Notification::make()->{$errors ? 'warning' : 'success'}()->title("Завантажено сканів: {$saved}")
+                    ->body("Нових сторінок у книзі: {$new}. Тепер їх можна розпізнати (Обробка → Розпізнати)."
+                        .($errors ? ' Помилки: '.implode('; ', array_slice($errors, 0, 3)) : ''))->send();
 
                 return redirect(static::getUrl('view', ['record' => $book]));
             });
+    }
+
+    /** Довша сторона скану після зменшення в браузері; 0 — без зменшення. */
+    public static function uploadMaxPx(): int
+    {
+        return max(0, (int) \App\Support\Settings::get('storage.upload_max_px'));
     }
 
     private static function createUploadedBook(array $data): Book
