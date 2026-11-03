@@ -19,6 +19,7 @@ class Settings
         'storage.checksum' => false,
         'storage.schedule' => 'off', // off | hourly | daily | weekly
         'storage.extensions' => ['jpg', 'jpeg'],
+        'storage.upload_max_px' => 3000, // довша сторона скану при завантаженні з браузера; 0 — без зменшення
         'ai.model' => 'gemini-2.5-pro',
         'ai.check_model' => 'gemini-2.5-pro',
         'ai.temperature' => 0.1,
