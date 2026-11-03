@@ -93,6 +93,34 @@ class StorageSync
         return $run;
     }
 
+    /**
+     * Скани, завантажені з браузера в одну книгу, — одразу в базу, без синхронізації:
+     * сховище не обходиться, інші папки й зниклі файли не перевіряються.
+     *
+     * @param  list<string>  $names  імена файлів, уже збережених у папці книги
+     * @return array{0: int, 1: list<string>} нових сторінок і помилки
+     */
+    public function registerUploaded(Book $book, array $names): array
+    {
+        $this->root = rtrim((string) Settings::get('storage.root'), '/');
+        // як і синхронізація, реєструємо лише дозволені розширення (Налаштування → Сховище)
+        $exts = array_map('strtolower', (array) Settings::get('storage.extensions'));
+        foreach ($names as $i => $name) {
+            if (! in_array(strtolower(pathinfo($name, PATHINFO_EXTENSION)), $exts, true)) {
+                $this->report['errors'][] = $name.': розширення не входить до дозволених ('.implode(', ', $exts).')';
+                unset($names[$i]);
+            }
+        }
+        usort($names, fn ($a, $b) => [self::pageKindRank($a), strnatcasecmp($a, $b)] <=> [self::pageKindRank($b), 0]);
+        // лише лічильники для syncFiles; у журнал синхронізацій нічого не пишеться
+        $run = new SyncRun;
+        $run->forceFill(['new_scans' => 0, 'changed_scans' => 0, 'restored_scans' => 0, 'corrupted_scans' => 0]);
+        $this->syncFiles($book, $book->folder_path, array_values($names), (bool) Settings::get('storage.checksum'), $run);
+        $book->forceFill(['synced_at' => now()])->refreshCounters();
+
+        return [(int) $run->new_scans, $this->report['errors']];
+    }
+
     /** @return array<string, list<string>> відносна папка => JPG-файли (природний порядок) */
     private function collectFolders(string $scopeAbs, array $exts): array
     {
