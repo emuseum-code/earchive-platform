@@ -58,6 +58,12 @@ class AdaptationService
                     }
                     $v = $matched ?? $v;
                 }
+                if ($v !== null && ! empty($rule->params['dictionaries'])) {
+                    $unknown = self::unknownTerms((string) $v, $rule->params['dictionaries']);
+                    if ($unknown) {
+                        $issues[] = ['field' => $rule->target_field, 'level' => 'ambiguity', 'message' => 'Немає в тезаурусах РМФУ: «'.implode('», «', $unknown).'»'];
+                    }
+                }
                 $values[$rule->target_field] = $v;
                 $sources[$rule->target_field] = ['fields' => $rule->source_fields, 'rule' => 'ai', 'raw' => $this->raw($rule, $src)];
             }
@@ -170,6 +176,14 @@ class AdaptationService
         $a->status = $a->errors_count || $a->warnings_count ? AdaptationStatus::NeedsClarification : AdaptationStatus::Adapted;
     }
 
+    /** Частини складеного значення («Папір, Картон; Друк»), яких немає в жодному з довідників. */
+    public static function unknownTerms(string $value, array $dictionaries): array
+    {
+        return collect(preg_split('/[;,]/u', $value))->map(fn ($p) => trim($p))->filter()
+            ->reject(fn ($p) => collect($dictionaries)->contains(fn ($code) => Dictionary::match($code, $p) !== null))
+            ->values()->all();
+    }
+
     private function raw(AdaptationRule $rule, array $src): ?string
     {
         return collect($rule->source_fields)->map(fn ($f) => $src[$f] ?? null)->filter()->implode(' | ') ?: null;
@@ -254,7 +268,10 @@ class AdaptationService
         }
         $spec = $rules->map(function ($r) use ($fields) {
             $f = $fields[$r->target_field] ?? null;
-            $dict = $f?->dictionary ? ' Допустимі значення: '.$f->dictionary->items->pluck('value')->implode('; ').'.' : '';
+            $dict = $f?->dictionary ? ' Допустимі значення: '.$f->dictionary->items->pluck('value')->unique()->implode('; ').'.' : '';
+            foreach (Dictionary::whereIn('code', $r->params['dictionaries'] ?? [])->with('items')->get() as $d) {
+                $dict .= ' '.$d->name.': '.$d->items->pluck('value')->unique()->implode('; ').'.';
+            }
 
             return sprintf('- %s: %s. %s%s', $r->target_field, $f?->label ?? $r->target_field, $r->comment ?? AdaptationRule::TRANSFORMS[$r->transform] ?? '', $dict);
         })->implode("\n");
