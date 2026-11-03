@@ -11,7 +11,7 @@ class DictionaryItem extends Model
 
     protected function casts(): array
     {
-        return ['synonyms' => 'array'];
+        return ['synonyms' => 'array', 'is_group' => 'boolean'];
     }
 
     public function dictionary(): BelongsTo
