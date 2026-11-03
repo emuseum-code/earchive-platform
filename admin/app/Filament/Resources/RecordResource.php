@@ -34,6 +34,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
+use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -63,6 +64,9 @@ class RecordResource extends Resource
     protected static ?string $navigationLabel = 'Єдина таблиця';
 
     protected static ?int $navigationSort = 1;
+
+    // у меню — сторінка вибору музею (Pages\RecordMuseums), звідти таблиця відкривається для одного музею
+    protected static bool $shouldRegisterNavigation = false;
 
     public static function canCreate(): bool
     {
@@ -179,6 +183,11 @@ class RecordResource extends Resource
 
         return $table
             ->defaultSort(fn ($query) => $query->orderBy('book_id')->orderBy('sequence'))
+            ->groups([
+                Group::make('book_id')->label('Книга')->collapsible()
+                    ->getTitleFromRecordUsing(fn (Record $record) => $record->book?->title ?? 'Без книги'),
+            ])
+            ->defaultGroup('book_id')
             ->paginated([25, 50, 100])
             ->defaultPaginationPageOption(25)
             ->searchPlaceholder('Текст, № запису, інвентарний чи обліковий номер')
