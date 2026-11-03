@@ -26,7 +26,7 @@
                                         @foreach ($this->funds($m->id) as $f)
                                             @php $fOpen = $open['f'.$f->id] ?? false; @endphp
                                             <li wire:key="f{{ $f->id }}">
-                                                <button type="button" class="bk-tree__node" wire:click="toggle('f{{ $f->id }}')"><span class="bk-tree__caret">{{ $fOpen ? '▾' : '▸' }}</span> 📁 {{ $f->name }}</button>
+                                                <button type="button" class="bk-tree__node" wire:click="toggle('f{{ $f->id }}')"><span class="bk-tree__caret">{{ $fOpen ? '▾' : '▸' }}</span> 📁 {{ $f->name }}@if ($f->planned_books) <span class="bk-muted">· книг {{ $f->books_count }} з {{ $f->planned_books }}</span>@endif</button>
                                                 @if ($fOpen)<ul>@foreach ($this->books($m->id, $f->id) as $b) @include('filament.pages.tree-book', ['b' => $b]) @endforeach</ul>@endif
                                             </li>
                                         @endforeach
