@@ -22,7 +22,8 @@ class ItemsRelationManager extends RelationManager
     {
         return $schema->components([
             TextInput::make('value')->label('Значення реєстру')->required()->columnSpanFull(),
-            TextInput::make('code')->label('Код'),
+            TextInput::make('value_en')->label('Англійською')->columnSpanFull(),
+            TextInput::make('code')->label('ID у реєстрі'),
             TextInput::make('sort')->label('Порядок')->numeric()->default(0),
             TagsInput::make('synonyms')->label('Як записано в книгах')->columnSpanFull()
                 ->helperText('Варіанти з книг, які зіставляються з цим значенням: «хорошее», «удовлетворит.» …'),
@@ -31,9 +32,12 @@ class ItemsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        return $table->defaultSort('sort')->columns([
-            TextColumn::make('value')->label('Значення')->searchable()->weight('medium'),
-            TextColumn::make('code')->label('Код'),
+        return $table->defaultSort('sort')->modifyQueryUsing(fn ($query) => $query->with('parent'))->columns([
+            TextColumn::make('value')->label('Значення')->searchable()->weight('medium')
+                ->description(fn ($record) => $record->is_group ? 'має підпункти' : null),
+            TextColumn::make('parent.value')->label('Батьківський термін')->color('gray'),
+            TextColumn::make('value_en')->label('EN')->toggleable(isToggledHiddenByDefault: true),
+            TextColumn::make('code')->label('ID у реєстрі')->searchable(),
             TextColumn::make('synonyms')->label('Синоніми з книг')->badge()->color('gray'),
         ])->headerActions([CreateAction::make()])->recordActions([EditAction::make(), DeleteAction::make()]);
     }

@@ -68,21 +68,11 @@ class RegistrySeeder extends Seeder
                 ['Потребує реставрації', ['требует реставрации', 'обложка оторвана']],
                 ['Незадовільний', ['плохое', 'ветхое', 'поганий']],
             ]],
-            'acquisition_method' => ['Спосіб надходження', [
-                ['Дарування (пожертвування)', ['дар', 'от', 'дарение', 'акт']],
-                ['Закупівля', ['куплено', 'закупка']],
-                ['Передача від іншої установи', ['передано']],
-                ['Польові дослідження (експедиція)', ['экспедиция']],
-                ['Знахідка', ['находка']],
-            ]],
-            'classification' => ['Класифікація', [
-                ['Писемні пам’ятки', ['писемні пам\'ятки']], ['Документи', []], ['Фотографії', ['фото']], ['Нумізматика', []],
-                ['Фалеристика', ['медаль', 'орден', 'знак']], ['Предмети побуту', []], ['Образотворче мистецтво', []],
-            ]],
-            'material' => ['Матеріали й техніки', [
-                ['Папір', ['бумага']], ['Картон', ['картон']], ['Тканина', ['ткань']], ['Друкарський друк', ['типограф', 'типограф.']],
-                ['Рукопис', ['рукопись']], ['Машинопис', ['машинопись']], ['Тиснення', ['тиснение']], ['Фотодрук', ['фото']],
-            ]],
+            // заповнюються з тезаурусів РМФУ командою books:thesauri (наприкінці run())
+            'acquisition_method' => ['Спосіб надходження', []],
+            'classification' => ['Класифікація', []],
+            'material' => ['Матеріали', []],
+            'technique' => ['Техніки виконання', []],
         ];
         $dictIds = [];
         foreach ($dicts as $code => [$name, $items]) {
@@ -140,7 +130,7 @@ class RegistrySeeder extends Seeder
             ['used_year_from', ['description'], 'ai', null, true, null],
             ['used_year_to', ['description'], 'ai', null, true, null],
             ['sizes', ['dimensions'], 'sizes', null, false, null],
-            ['composition', ['material', 'description'], 'ai', null, true, 'Розшифрувати скорочення, перекласти, доповнити техніками з опису: «Папір, Друкарський друк; Рукопис».'],
+            ['composition', ['material', 'description'], 'ai', ['dictionaries' => ['material', 'technique']], true, \App\Console\Commands\ImportThesauri::COMPOSITION],
             ['condition', ['condition'], 'dictionary', ['dictionary' => 'condition'], false, null],
             ['condition_date', ['record_date'], 'date', null, false, null],
             ['acquisition_method', ['acquisition_source'], 'dictionary', ['dictionary' => 'acquisition_method'], true, 'Спосіб надходження за довідником.'],
@@ -153,6 +143,9 @@ class RegistrySeeder extends Seeder
                 'source_fields' => $src, 'transform' => $transform, 'params' => $params, 'use_ai' => $ai, 'sort' => $sort, 'comment' => $comment,
             ]);
         }
+
+        // класифікації, матеріали, техніки й способи надходження — з тезаурусів РМФУ
+        \Illuminate\Support\Facades\Artisan::call('books:thesauri');
 
         return $schema;
     }

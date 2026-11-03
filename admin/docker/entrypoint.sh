@@ -23,6 +23,8 @@ if [ "${RUN_MIGRATIONS:-0}" = "1" ]; then
     # одноразово: прибрати тестові дані, залишити лише реальні книги (KEEP_BOOKS, через «|»)
     # у підоболонці, щоб не зіпсувати "$@" (команду контейнера для exec нижче)
     ( IFS='|'; set -- ${KEEP_BOOKS:-Test2}; php artisan books:keep-only "$@" ) || true
+    # довідники з тезаурусів РМФУ: класифікації, матеріали, техніки, способи надходження (app/Console/Commands/ImportThesauri.php)
+    php artisan books:thesauri || true
     php artisan books:storage-init || true
     php artisan config:cache && php artisan route:cache && php artisan view:cache
 fi
