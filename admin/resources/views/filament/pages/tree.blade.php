@@ -21,6 +21,7 @@
                                     <span class="bk-tree__caret">{{ $mOpen ? '▾' : '▸' }}</span> 🏛 {{ $m->name }}
                                     <span class="bk-muted">· книг {{ $m->books_count }} · сканів {{ number_format((int) $m->books_sum_scans_count, 0, ',', ' ') }} · записів {{ (int) $m->books_sum_records_count }} ({{ (int) $m->books_sum_records_verified }} перевірено)</span>
                                 </button>
+                                <a class="bk-link" href="{{ \App\Filament\Pages\MuseumDesk::getUrl(['museum' => $m->id]) }}" title="Книги, скани, звірка лише цього музею">→ працювати з музеєм</a>
                                 @if ($mOpen)
                                     <ul>
                                         @foreach ($this->funds($m->id) as $f)
