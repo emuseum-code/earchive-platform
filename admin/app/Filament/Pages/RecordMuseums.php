@@ -9,10 +9,11 @@ use App\Models\Territory;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Url;
 
 /**
- * Вхід в «Єдину таблицю записів»: територія → музей. Клік по музею відкриває таблицю записів лише цього музею
- * (згруповану за книгами), щоб записи різних музеїв не змішувалися.
+ * «Єдина таблиця записів»: музеї один під одним. Клік по назві музею розгортає під нею таблицю його записів
+ * (згруповану за книгами), повторний клік згортає. Одночасно відкритий один музей.
  */
 class RecordMuseums extends Page
 {
@@ -30,8 +31,9 @@ class RecordMuseums extends Page
 
     protected string $view = 'filament.pages.record-museums';
 
-    /** Згорнуті території: ['t1' => false]; типово всі розгорнуті */
-    public array $open = [];
+    /** Розгорнутий музей (у адресі, щоб після переходу до звірки й назад він лишався відкритим) */
+    #[Url(as: 'museum')]
+    public ?int $openMuseum = null;
 
     public string $search = '';
 
@@ -40,12 +42,12 @@ class RecordMuseums extends Page
         return RecordResource::canViewAny();
     }
 
-    public function toggle(string $node): void
+    public function toggleMuseum(int $id): void
     {
-        $this->open[$node] = ! ($this->open[$node] ?? true);
+        $this->openMuseum = $this->openMuseum === $id ? null : $id;
     }
 
-    /** @return Collection<int, array{key: string, name: string, museums: Collection}> */
+    /** @return Collection<int, array{name: string, museums: Collection}> */
     public function groups(): Collection
     {
         $museums = Museum::visibleTo(auth()->user())
@@ -55,8 +57,8 @@ class RecordMuseums extends Page
         $territories = Territory::whereIn('id', $museums->pluck('territory_id')->filter()->unique())->pluck('name', 'id');
 
         return $museums->groupBy(fn ($m) => (int) $m->territory_id)
-            ->map(fn ($items, $tid) => ['key' => 't'.$tid, 'name' => $territories[$tid] ?? 'Без території', 'museums' => $items])
-            ->sortBy(fn ($g) => [$g['key'] === 't0' ? 1 : 0, $g['name']])->values();
+            ->map(fn ($items, $tid) => ['name' => $territories[$tid] ?? 'Без території', 'museums' => $items, 'last' => $tid === 0])
+            ->sortBy(fn ($g) => [$g['last'] ? 1 : 0, $g['name']])->values();
     }
 
     public function recordsUrl(Museum $museum): string
