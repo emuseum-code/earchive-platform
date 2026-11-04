@@ -176,9 +176,9 @@ class BookResource extends Resource
      * Завантаження сканів з браузера (сховище на зовнішніх дисках, як у пілоті Лисичанська).
      * Файли кладуться в папку книги в кореневій директорії й одразу реєструються як сторінки, без синхронізації.
      * Браузер зменшує зображення до storage.upload_max_px (довша сторона) ще до відправлення на сервер.
-     * $book = null: нова книга (музей, фонд, назва).
+     * $book = null: нова книга (музей, фонд, назва); $museumId — музей, вибраний наперед (сторінка «Робота з музеєм»).
      */
-    public static function uploadAction(?Book $book = null): Action
+    public static function uploadAction(?Book $book = null, ?int $museumId = null): Action
     {
         $new = $book === null;
 
@@ -192,7 +192,7 @@ class BookResource extends Resource
                 .(static::uploadMaxPx() ? ' JPG і PNG зменшуються в браузері до '.static::uploadMaxPx().' px по довшій стороні.' : ''))
             ->modalSubmitActionLabel('Завантажити')
             ->schema(array_filter([
-                $new ? Select::make('museum_id')->label('Музей')->required()->searchable()->preload()->live()
+                $new ? Select::make('museum_id')->label('Музей')->required()->searchable()->preload()->live()->default($museumId)
                     ->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id')) : null,
                 $new ? Select::make('fund_id')->label('Фонд / група збереження')->searchable()
                     ->options(fn (Get $get) => Fund::where('museum_id', $get('museum_id'))->orderBy('name')->pluck('name', 'id')) : null,

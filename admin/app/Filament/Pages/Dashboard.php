@@ -12,6 +12,16 @@ class Dashboard extends BaseDashboard
 {
     protected static ?string $title = 'Огляд';
 
+    /** Швидкі дії на головній: скани в потрібний музей і перехід до роботи з одним музеєм. */
+    protected function getHeaderActions(): array
+    {
+        return [
+            \App\Filament\Resources\BookResource::uploadAction()->label('Додати скани'),
+            \Filament\Actions\Action::make('museumDesk')->label('Робота з музеєм')->icon('heroicon-o-building-library')->color('gray')
+                ->url(MuseumDesk::getUrl()),
+        ];
+    }
+
     public function getWidgets(): array
     {
         $w = [OverviewStats::class];

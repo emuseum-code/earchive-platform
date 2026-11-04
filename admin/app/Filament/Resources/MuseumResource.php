@@ -83,7 +83,7 @@ class MuseumResource extends Resource
                 TextColumn::make('folder_path')->label('Папка')->toggleable(isToggledHiddenByDefault: true)->fontFamily('mono')->size('xs'),
             ])
             ->filters([SelectFilter::make('territory_id')->label('Територія')->relationship('territory', 'name')])
-            ->recordUrl(fn (Museum $r) => BookResource::getUrl('index', ['filters' => ['museum_id' => ['value' => $r->id]]]))
+            ->recordUrl(fn (Museum $r) => \App\Filament\Pages\MuseumDesk::getUrl(['museum' => $r->id]))
             ->recordActions([
                 // ТЗ 6.1: запуск розпізнавання для цілого музею (нові, помилкові й змінені сторінки всіх його книг)
                 \App\Filament\Support\Ai::button(Action::make('recognize')->label('Розпізнати книги'))
