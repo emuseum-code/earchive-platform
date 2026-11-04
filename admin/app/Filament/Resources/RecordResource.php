@@ -155,8 +155,8 @@ class RecordResource extends Resource
     public static function table(Table $table): Table
     {
         $cols = [
-            TextColumn::make('book.title')->label('Книга')->toggleable()->wrap()->size('xs')
-                ->description(fn (Record $r) => $r->museum?->name),
+            // музей не повторюється в кожному рядку: таблиця завжди відкрита в межах одного музею
+            TextColumn::make('book.title')->label('Книга')->toggleable(isToggledHiddenByDefault: true)->wrap()->size('xs'),
         ];
         $visible = ['record_no', 'inventory_number', 'account_number', 'title', 'material', 'dimensions', 'condition'];
         foreach (Record::FIELDS as $key => [$label]) {
@@ -246,6 +246,9 @@ class RecordResource extends Resource
                     ->action(function (array $data, $livewire) {
                         $filters = collect($livewire->tableFilters ?? [])->map(fn ($f) => $f['value'] ?? $f['values'] ?? null)->filter()->all();
                         $filters['search'] = $livewire->getTableSearch();
+                        if (isset($livewire->museumId)) { // таблиця всередині розгорнутого музею (App\Livewire\MuseumRecordsTable)
+                            $filters['museum_id'] = $livewire->museumId;
+                        }
                         static::startExport($data['format'], array_filter($filters));
                     }),
             ])
