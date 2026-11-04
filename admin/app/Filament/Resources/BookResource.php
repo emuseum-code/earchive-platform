@@ -83,7 +83,8 @@ class BookResource extends Resource
             TextInput::make('book_number')->label('Номер / шифр книги'),
             Select::make('museum_id')->label('Музей')->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id'))
                 ->required()->searchable()->live(),
-            Select::make('fund_id')->label('Напрям обліку / фонд')->options(fn (Get $get) => Fund::where('museum_id', $get('museum_id'))->pluck('name', 'id')),
+            Select::make('fund_id')->label('Напрям обліку / фонд')->options(fn (Get $get) => Fund::where('museum_id', $get('museum_id'))->pluck('name', 'id'))
+                ->helperText('Після збереження всі записи книги перейдуть у цей фонд (і музей).'),
             Select::make('book_type')->label('Тип книги')->options(BookType::options())->required(),
             Select::make('recognition_template_id')->label('Шаблон розпізнавання')->options(fn () => RecognitionTemplate::where('is_active', true)->pluck('name', 'id'))
                 ->helperText('Порожньо — за типом книги.'),
@@ -195,6 +196,7 @@ class BookResource extends Resource
                 $new ? Select::make('museum_id')->label('Музей')->required()->searchable()->preload()->live()->default($museumId)
                     ->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id')) : null,
                 $new ? Select::make('fund_id')->label('Фонд / група збереження')->searchable()
+                    ->helperText('Перевірте фонд: це інвентарна книга, в якій предмети облікові. Усі записи книги отримають саме цей фонд, незалежно від матеріалу предметів.')
                     ->options(fn (Get $get) => Fund::where('museum_id', $get('museum_id'))->orderBy('name')->pluck('name', 'id')) : null,
                 $new ? TextInput::make('title')->label('Назва книги')->required()->maxLength(200)
                     ->placeholder('Інвентарна книга Д-ІІІ (документи)') : null,
