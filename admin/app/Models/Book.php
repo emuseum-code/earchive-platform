@@ -26,6 +26,18 @@ class Book extends Model
         return ['book_type' => BookType::class, 'synced_at' => 'datetime'];
     }
 
+    /** Записи книги завжди в тому самому музеї й фонді, що й книга: після зміни в картці книги вони переносяться разом із нею. */
+    protected static function booted(): void
+    {
+        static::updated(function (self $book) {
+            if ($book->wasChanged(['fund_id', 'museum_id'])) {
+                // без updated_at і версії запису: змінюється лише прив’язка, не дані звірки
+                \Illuminate\Support\Facades\DB::table('records')->where('book_id', $book->id)
+                    ->update(['fund_id' => $book->fund_id, 'museum_id' => $book->museum_id]);
+            }
+        });
+    }
+
     public function museum(): BelongsTo
     {
         return $this->belongsTo(Museum::class);
