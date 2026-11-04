@@ -54,7 +54,7 @@ class Tree extends Page
 
     public function funds(int $museumId)
     {
-        return Fund::where('museum_id', $museumId)->orderBy('name')->get();
+        return Fund::where('museum_id', $museumId)->withCount('books')->orderBy('name')->get();
     }
 
     public function books(int $museumId, ?int $fundId)
