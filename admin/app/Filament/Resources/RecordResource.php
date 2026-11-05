@@ -75,7 +75,9 @@ class RecordResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->visibleTo(auth()->user())->with(['book', 'museum', 'fund']);
+        // scans з кількістю записів на кожному — для колонки «Сторінка» без окремого запиту на рядок
+        return parent::getEloquentQuery()->visibleTo(auth()->user())
+            ->with(['book', 'museum', 'fund', 'scans' => fn ($query) => $query->withCount('records')]);
     }
 
     // Пошук у верхньому рядку (ТЗ 18.4): за номером запису, обліковим та інвентарним номером, назвою
@@ -157,6 +159,12 @@ class RecordResource extends Resource
         $cols = [
             // музей не повторюється в кожному рядку: таблиця завжди відкрита в межах одного музею
             TextColumn::make('book.title')->label('Книга')->toggleable(isToggledHiddenByDefault: true)->wrap()->size('xs'),
+            // Сторінка (розворот) книги, з якої розпізнано запис; запис на двох розворотах — «5–6». Під номером — скільки записів на цій сторінці.
+            TextColumn::make('page')->label('Сторінка')->alignCenter()->placeholder('—')->toggleable()
+                ->state(fn (Record $record) => $record->scans->map(fn ($s) => $s->page_label ?: $s->page_order)->implode('–') ?: null)
+                ->description(fn (Record $record) => ($s = $record->scans->first())
+                    ? $s->records_count.' '.trans_choice('запис|записи|записів', $s->records_count).' на сторінці' : null)
+                ->tooltip(fn (Record $record) => $record->scans->pluck('filename')->implode(', ') ?: null),
         ];
         $visible = ['record_no', 'inventory_number', 'account_number', 'title', 'material', 'dimensions', 'condition'];
         foreach (Record::FIELDS as $key => [$label]) {
