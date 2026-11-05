@@ -201,7 +201,9 @@ class RecordResource extends Resource
                 // типово: «Книга · сторінка N» з кількістю записів, під заголовком — записи цієї сторінки
                 Group::make('page_no')->label('Сторінка книги')->collapsible()
                     ->getKeyFromRecordUsing(fn (Record $record) => $record->book_id.'-'.($record->page_no ?? 0))
-                    ->getTitleFromRecordUsing(fn (Record $record) => ($record->book?->title ?? 'Без книги').' · сторінка '.($record->scans->first()?->page_label ?: ($record->page_no ?? '—')))
+                    // групи йдуть за порядком сканів; якщо в книзі видно власний номер сторінки — показуємо його і номер скану
+                    ->getTitleFromRecordUsing(fn (Record $record) => ($record->book?->title ?? 'Без книги').' · '.(($label = $record->scans->first()?->page_label)
+                        ? 'сторінка '.$label.' (скан '.$record->page_no.')' : 'сторінка '.($record->page_no ?? '—')))
                     ->getDescriptionFromRecordUsing(fn (Record $record) => ($n = $record->scans->first()?->records_count)
                         ? $n.' '.trans_choice('запис|записи|записів', $n).' на сторінці' : null)
                     ->orderQueryUsing(fn ($query, string $direction) => $query->orderBy('records.book_id')->orderBy('page_no', $direction))
@@ -214,6 +216,8 @@ class RecordResource extends Resource
                     ->getTitleFromRecordUsing(fn (Record $record) => $record->book?->title ?? 'Без книги'),
             ])
             ->defaultGroup('page_no')
+            // «За зростанням / спаданням» стосувалося лише порядку груп і плутало; записи сортуються кліком по заголовку колонки
+            ->groupingDirectionSettingHidden()
             ->paginated([25, 50, 100])
             ->defaultPaginationPageOption(25)
             ->searchPlaceholder('Текст, № запису, інвентарний чи обліковий номер')
@@ -259,6 +263,8 @@ class RecordResource extends Resource
                 Filter::make('open_remarks')->label('Є відкриті зауваження')->query(fn ($query) => $query->whereHas('openRemarks')),
             ])
             ->filtersFormColumns(3)
+            // фільтр застосовується одразу після вибору, без окремої кнопки «Застосувати фільтри»
+            ->deferFilters(false)
             ->recordUrl(fn (Record $r) => static::getUrl('view', ['record' => $r]))
             ->recordActions([
                 Action::make('review')->label('Провести звірку')->icon('heroicon-o-document-magnifying-glass')
