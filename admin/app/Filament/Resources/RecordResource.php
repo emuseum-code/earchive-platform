@@ -81,11 +81,18 @@ class RecordResource extends Resource
             ->with(['book', 'museum', 'fund', 'scans' => fn ($query) => $query->withCount('records')]);
     }
 
-    /** Номер першої сторінки (скану) книги, з якої розпізнано запис, — для групування «Книга · сторінка». */
+    /**
+     * Номер сторінки книги, з якої розпізнано запис (для групування й сортування «За зростанням / спаданням»):
+     * власний номер сторінки зі скану (перше число в page_label), а якщо його немає — порядковий номер скану.
+     */
     public static function pageSubquery(): \Illuminate\Database\Query\Builder
     {
+        $page = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql'
+            ? "coalesce(nullif(substring(scans.page_label from '[0-9]+'), '')::int, scans.page_order)"
+            : 'scans.page_order';
+
         return \Illuminate\Support\Facades\DB::table('record_pages')->join('scans', 'scans.id', '=', 'record_pages.scan_id')
-            ->whereColumn('record_pages.record_id', 'records.id')->selectRaw('min(scans.page_order)');
+            ->whereColumn('record_pages.record_id', 'records.id')->selectRaw("min({$page})");
     }
 
     // Пошук у верхньому рядку (ТЗ 18.4): за номером запису, обліковим та інвентарним номером, назвою
@@ -201,7 +208,9 @@ class RecordResource extends Resource
                 // типово: «Книга · сторінка N» з кількістю записів, під заголовком — записи цієї сторінки
                 Group::make('page_no')->label('Сторінка книги')->collapsible()
                     ->getKeyFromRecordUsing(fn (Record $record) => $record->book_id.'-'.($record->page_no ?? 0))
-                    ->getTitleFromRecordUsing(fn (Record $record) => ($record->book?->title ?? 'Без книги').' · сторінка '.($record->scans->first()?->page_label ?: ($record->page_no ?? '—')))
+                    // групи йдуть за номером сторінки книги (з «За зростанням / спаданням»); у дужках — порядковий номер скану, якщо він інший
+                    ->getTitleFromRecordUsing(fn (Record $record) => ($record->book?->title ?? 'Без книги').' · сторінка '.($record->page_no ?? '—')
+                        .(($scan = $record->scans->first()) && $scan->page_order != $record->page_no ? ' (скан '.$scan->page_order.')' : ''))
                     ->getDescriptionFromRecordUsing(fn (Record $record) => ($n = $record->scans->first()?->records_count)
                         ? $n.' '.trans_choice('запис|записи|записів', $n).' на сторінці' : null)
                     ->orderQueryUsing(fn ($query, string $direction) => $query->orderBy('records.book_id')->orderBy('page_no', $direction))
@@ -259,6 +268,8 @@ class RecordResource extends Resource
                 Filter::make('open_remarks')->label('Є відкриті зауваження')->query(fn ($query) => $query->whereHas('openRemarks')),
             ])
             ->filtersFormColumns(3)
+            // фільтр застосовується одразу після вибору, без окремої кнопки «Застосувати фільтри»
+            ->deferFilters(false)
             ->recordUrl(fn (Record $r) => static::getUrl('view', ['record' => $r]))
             ->recordActions([
                 Action::make('review')->label('Провести звірку')->icon('heroicon-o-document-magnifying-glass')
