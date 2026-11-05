@@ -77,7 +77,15 @@ class RecordResource extends Resource
     {
         // scans з кількістю записів на кожному — для колонки «Сторінка» без окремого запиту на рядок
         return parent::getEloquentQuery()->visibleTo(auth()->user())
+            ->select('records.*')->selectSub(static::pageSubquery(), 'page_no')
             ->with(['book', 'museum', 'fund', 'scans' => fn ($query) => $query->withCount('records')]);
+    }
+
+    /** Номер першої сторінки (скану) книги, з якої розпізнано запис, — для групування «Книга · сторінка». */
+    public static function pageSubquery(): \Illuminate\Database\Query\Builder
+    {
+        return \Illuminate\Support\Facades\DB::table('record_pages')->join('scans', 'scans.id', '=', 'record_pages.scan_id')
+            ->whereColumn('record_pages.record_id', 'records.id')->selectRaw('min(scans.page_order)');
     }
 
     // Пошук у верхньому рядку (ТЗ 18.4): за номером запису, обліковим та інвентарним номером, назвою
@@ -160,10 +168,8 @@ class RecordResource extends Resource
             // музей не повторюється в кожному рядку: таблиця завжди відкрита в межах одного музею
             TextColumn::make('book.title')->label('Книга')->toggleable(isToggledHiddenByDefault: true)->wrap()->size('xs'),
             // Сторінка (розворот) книги, з якої розпізнано запис; запис на двох розворотах — «5–6». Під номером — скільки записів на цій сторінці.
-            TextColumn::make('page')->label('Сторінка')->alignCenter()->placeholder('—')->toggleable()
+            TextColumn::make('page')->label('Сторінка')->alignCenter()->placeholder('—')->toggleable(isToggledHiddenByDefault: true)
                 ->state(fn (Record $record) => $record->scans->map(fn ($s) => $s->page_label ?: $s->page_order)->implode('–') ?: null)
-                ->description(fn (Record $record) => ($s = $record->scans->first())
-                    ? $s->records_count.' '.trans_choice('запис|записи|записів', $s->records_count).' на сторінці' : null)
                 ->tooltip(fn (Record $record) => $record->scans->pluck('filename')->implode(', ') ?: null),
         ];
         $visible = ['record_no', 'inventory_number', 'account_number', 'title', 'material', 'dimensions', 'condition'];
@@ -192,10 +198,22 @@ class RecordResource extends Resource
         return $table
             ->defaultSort(fn ($query) => $query->orderBy('book_id')->orderBy('sequence'))
             ->groups([
+                // типово: «Книга · сторінка N» з кількістю записів, під заголовком — записи цієї сторінки
+                Group::make('page_no')->label('Сторінка книги')->collapsible()
+                    ->getKeyFromRecordUsing(fn (Record $record) => $record->book_id.'-'.($record->page_no ?? 0))
+                    ->getTitleFromRecordUsing(fn (Record $record) => ($record->book?->title ?? 'Без книги').' · сторінка '.($record->scans->first()?->page_label ?: ($record->page_no ?? '—')))
+                    ->getDescriptionFromRecordUsing(fn (Record $record) => ($n = $record->scans->first()?->records_count)
+                        ? $n.' '.trans_choice('запис|записи|записів', $n).' на сторінці' : null)
+                    ->orderQueryUsing(fn ($query, string $direction) => $query->orderBy('records.book_id')->orderBy('page_no', $direction))
+                    ->scopeQueryByKeyUsing(function ($query, string $key) {
+                        [$book, $page] = array_map('intval', explode('-', $key, 2) + [1 => 0]);
+
+                        return $query->where('records.book_id', $book)->where(static::pageSubquery(), $page ?: null);
+                    }),
                 Group::make('book_id')->label('Книга')->collapsible()
                     ->getTitleFromRecordUsing(fn (Record $record) => $record->book?->title ?? 'Без книги'),
             ])
-            ->defaultGroup('book_id')
+            ->defaultGroup('page_no')
             ->paginated([25, 50, 100])
             ->defaultPaginationPageOption(25)
             ->searchPlaceholder('Текст, № запису, інвентарний чи обліковий номер')
