@@ -21,6 +21,11 @@ if [ "${RUN_MIGRATIONS:-0}" = "1" ]; then
     php artisan archive:demo-password || true
     # скани в постійному томі (app/Console/Commands/InitStorage.php)
     php artisan archive:storage-init || true
+    # 10 документів розділу «Міжнародні багатосторонні і двосторонні переговори…» еАрхіву МЗС (один раз)
+    if [ -f storage/app/.seeded ] && [ ! -f storage/app/.earchive-imported ]; then
+        php artisan archive:import-earchive 2 --ids=167,249,474,493,494,598,648,667,692,848 --recognized \
+            && touch storage/app/.earchive-imported || true
+    fi
     php artisan config:cache && php artisan route:cache && php artisan view:cache
 fi
 # artisan above runs as root; php-fpm (www-data) must be able to write the caches, logs, thumbnails and exports

@@ -4,7 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\Book;
 use App\Models\Museum;
+use App\Models\RecognitionTemplate;
 use App\Models\SyncRun;
+use App\Services\RecognitionService;
 use App\Services\StorageSync;
 use App\Support\Settings;
 use Illuminate\Console\Command;
@@ -15,20 +17,23 @@ use Symfony\Component\Process\Process;
 /**
  * Документи розділу каталогу earchive.mfa.gov.ua: PDF → аркуші JPG у сховищі
  * (м. Київ / ЦДАВО України / Ф. N … / Опис N / Справа N), синхронізація, шифри фонду, опису й справи.
- * Метадані — database/data/earchive/category-N.json (tools/earchive_subset.py), PDF — з гілки data/earchive-pdfs.
+ * Метадані — database/data/earchive/category-N.json (tools/earchive_subset.py), PDF — database/data/earchive/pdfs (надіслав Дмитро: сайт за Cloudflare).
  */
 class ImportEarchive extends Command
 {
+    public const RECOGNIZED_MODEL = 'Claude (розпізнано вручну для показу, без Gemini)';
+
     protected $signature = 'archive:import-earchive {category=2 : Розділ каталогу} {--ids= : ID документів через кому}
-        {--pdf-dir= : Папка з PDF (типово storage/app/earchive-pdfs)} {--dpi=150 : Роздільність аркушів}';
+        {--pdf-dir= : Папка з PDF (типово database/data/earchive/pdfs)} {--dpi=150 : Роздільність аркушів}
+        {--recognized : Завантажити готові результати розпізнавання з database/data/earchive/recognized}';
 
     protected $description = 'Імпортувати документи розділу каталогу еАрхіву МЗС: PDF → аркуші справ';
 
-    public function handle(StorageSync $sync): int
+    public function handle(StorageSync $sync, RecognitionService $recognition): int
     {
         $data = json_decode(File::get(database_path('data/earchive/category-'.$this->argument('category').'.json')), true);
         $ids = array_filter(array_map('intval', explode(',', (string) $this->option('ids'))));
-        $pdfDir = $this->option('pdf-dir') ?: storage_path('app/earchive-pdfs');
+        $pdfDir = $this->option('pdf-dir') ?: database_path('data/earchive/pdfs');
         $root = rtrim((string) Settings::get('storage.root'), '/');
         File::ensureDirectoryExists($root);
         $done = [];
@@ -87,10 +92,41 @@ class ImportEarchive extends Command
             }
             $book->refreshCounters();
         }
+        if ($this->option('recognized')) {
+            $this->loadRecognized(array_keys($done), $recognition);
+        }
         Museum::where('name', 'ЦДАВО України')->update(['notes' => 'Центральний державний архів вищих органів влади та управління України']);
         $this->info('Справ: '.count($done).', документів: '.collect($done)->flatten(1)->count());
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Готові результати розпізнавання (JSON за схемою шаблону: сторінка → page_label, records) проходять той самий
+     * шлях, що й відповідь Gemini: перевірка схеми, документи, продовження на наступних сторінках. Далі документ перевіряє верифікатор і адаптує в ISAD(G).
+     */
+    private function loadRecognized(array $dirs, RecognitionService $recognition): void
+    {
+        $results = [];
+        foreach (glob(database_path('data/earchive/recognized/*.json')) as $file) {
+            $results += json_decode(File::get($file), true);
+        }
+        $template = RecognitionTemplate::where('is_active', true)->firstOrFail();
+        $pages = 0;
+        foreach (Book::whereIn('folder_path', $dirs)->get() as $book) {
+            foreach ($book->scans()->orderBy('page_order')->get() as $scan) {
+                if (! isset($results[$scan->filename]) || $scan->results()->exists()) {
+                    continue;
+                }
+                $recognition->store($scan, $template, [
+                    'json' => $results[$scan->filename],
+                    'raw' => json_encode($results[$scan->filename], JSON_UNESCAPED_UNICODE),
+                    'model' => self::RECOGNIZED_MODEL,
+                ]);
+                $pages++;
+            }
+        }
+        $this->info('Розпізнано сторінок: '.$pages);
     }
 
     /** м. Київ / ЦДАВО України / Ф. 3696 Міністерство закордонних справ УНР / Опис 2 / Справа 21а */

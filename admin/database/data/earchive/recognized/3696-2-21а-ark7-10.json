@@ -1,0 +1,63 @@
+{
+  "3696-2-21а-ark7-10-1.jpg": {
+    "page_label": "арк. 7",
+    "records": [{
+      "continuation": false,
+      "values": {
+        "doc_date": "Paris le 12 Février [1919]",
+        "sheets": "7–10",
+        "doc_type": "Нота",
+        "title": "Нота Голови Делегації УНР у Парижі Г. Сидоренка до Президента Мирної конференції в Парижі про визнання незалежності й суверенітету Української Народної Республіки",
+        "description": "Делегація УНР на доповнення попередньої ноти просить передати Мирній конференції ноту про визнання незалежності УНР. Найбільшим ворогом незалежності України названо більшовицьку Росію з її імперіалістичною політикою; УНР разом з Фінляндією, Естонією, Латвією, Литвою, Білоруссю й Грузією стримує її і відокремлює Росію від Німеччини. Визнання УНР союзниками і США подано як необхідну умову спокою і стабільного порядку у Східній Європі.",
+        "author": "Делегація Української Народної Республіки в Парижі; Голова Делегації, міністр шляхів сполучення Г. Сидоренко",
+        "addressee": "Президент Мирної конференції в Парижі",
+        "place": "Париж",
+        "language": "Французька",
+        "authenticity": "Оригінал",
+        "reproduction": "Машинопис",
+        "persons": "Сидоренко Г.; Скоропадський П.",
+        "places": "Україна; Росія; Париж; Дарданелли; Суец; Перська затока; Румунія; Угорщина; Фінляндія; Естонія; Латвія; Литва; Білорусь; Грузія; Франція; Німеччина; Константинополь; Багдад; Центральна Азія; Західна Європа; Східна Європа; США",
+        "organizations": "Делегація Української Народної Республіки в Парижі; Мирна конференція в Парижі; уряд Української Народної Республіки; більшовицький уряд Росії",
+        "full_text": "DÉLÉGATION de la République UKRAINIENNE\nP A R I S .\n\nParis le 12 Février.\n\nSon Excellence Monsieur le Président de la Conférence de la Paix à P A R I S .\n\nMonsieur le Président,\nLa Délégation de la République UKRAINIENNE qui a pleins pouvoirs de son Gouvernement, s'adresse à vous pour vous demander de transmettre à la Haute Conférence de la Paix à Paris - comme supplément et développement de la note déjà présentée à vous au sujet de la reconnaissance de l'indépendance et de la souveraineté de la République UKRAINIENNE - la note suivante :\nL'ennemi le plus grand de l'indépendance de la République UKRAINIENNE est la Russie avec son gouvernement actuel bolchévik, pratiquant la même politique impérialiste que le gouvernement tsariste et que le gouvernement démocratique de la Russie; ainsi elle a voulu passer sur le cadavre de l'UKRAINE indépendante pour mettre la main d'un côté sur les Dardanelles et Suez, et de l'autre sur le Golfe Persique.",
+        "condition": "Задовільний; скан низької роздільності, частина літер злилася",
+        "notes": "Олівцева нумерація аркуша «7»; цифра дати в рядку «Paris le 1? Février» читається нечітко"
+      },
+      "uncertain": [
+        {"field": "doc_date", "reason": "Друга цифра дня нечітка; рік не вказано, 1919 — за каталогом еАрхіву"}
+      ]
+    }]
+  },
+  "3696-2-21а-ark7-10-2.jpg": {
+    "page_label": "арк. 8",
+    "records": [{
+      "continuation": true,
+      "values": {
+        "full_text": "-2-\nVoilà pourquoi le Gouvernement Ukrainien fait depuis plus d'un an ( avec des petites interruption) une guerre sans merci au gouvernement bolchevik de la Russie Cette lutte continuera jusqu'à l'anéantissement complet des intentions impérialistes du gouvernement bolchevik de la Russie. Dans cette guerre le gouvernement Ukrainien défend uniquement son pays et ne fait aucune action offensive contre les frontières ethnographiques de la Russie, parcequ'il considère que ce n'est pas son droit de s'immiscer dans les affaires intérieures d'un Etat voisin.\nIl est vrai que le Gouvernement bolchevik de la Russie dans le but de cacher ses intentions impérialistes, accusait toujours le Gouvernement de la République Ukrainienne, disant que celui-ci menait une lutte énergique contre la propagande pacifiste des idées bolcheviks en dedans des frontières de la République Ukrainienne et qu'elle empêchait en même temps le développement de ces mêmes idées en Europe Occidentale par l'intermédiaire de la Roumanie et de la Hongrie/\nDans cette guerre contre les intentions impérialistes du Gouvernement Bolchevik de la Russie, la République Ukrainienne ne reste pas isolée: au même rang qu'elle luttent des autres Etats indépendants, notamment: la Finlande, l'Esthonie, la Latvia, la Lithuanie, la Russie Blanche et la Géorgie avec lesquels la République Ukrainienne se trouve",
+        "notes": "Олівцева нумерація аркуша «8»"
+      },
+      "uncertain": [{"field": "full_text", "reason": "Кілька слів у другому абзаці («ses intentions», «de la République») розмиті, прочитано за контекстом"}]
+    }]
+  },
+  "3696-2-21а-ark7-10-3.jpg": {
+    "page_label": "арк. 9",
+    "records": [{
+      "continuation": true,
+      "values": {
+        "full_text": "-3-\ndans les relations les plus amicales.\nLa République Ukrainienne indépendante, d'accord avec tous ces Etats, encercle étroitement la Russie Bolchevik et met de cette manière des bornes aux intentions impérialistes des bolcheviks de la Russie.\nD'un autre côté, il est nécessaire de remarquer que l'ancienne Russie, sans aucun égard à son alliance avec la France, fut toujours sous une forte influence allemande, qui soutenait toujours la Russie unie et indivisible dans sa lutte contre les efforts séparatistes des peuples allogènes de l'ancienne Russie. En même temps, elle exploitait fortement la Russie au point de vue économique, surtout par sa marche traditionelle \" Drang nach Osten \" dont elle fait passer la route d'un côté par Constantinople, Bagdad et de l'autre par les colonies allemandes qui se trouvent en Ukraine, se dirigeant de cette manière vers l'Asie Centrale.\nDans le but de reconstituer cette Russie unifiée et indivisible l'Allemagne a essayé de réaliser contre l'indépendance de la République Ukrainienne un coup d'état déjà en Avril 1918, en y établissant dictateur son agent Skoropadski.\nLe Gouvernement bolchevik de la Russie se prépare actuellement à s'unir à l'Allemagne afin de se jeter plus tard avec des forces réunies contre l'Europe Occidentale.\nLa République indépendante Ukrainienne, d'accord avec",
+        "notes": "Олівцева нумерація аркуша «9»"
+      },
+      "uncertain": []
+    }]
+  },
+  "3696-2-21а-ark7-10-4.jpg": {
+    "page_label": "арк. 10",
+    "records": [{
+      "continuation": true,
+      "values": {
+        "full_text": "-4-\nles Etats nommés plus haut, forment ensemble une forte barrière séparant la Russie de l'Allemagne, barrière qui ne leur permettra pas de se réunir.\nPour cette raison, la reconnaissance de l'indépendance et de la souveraineté de la République Ukrainienne par les Alliés et par les Etats-Unis de l'Amérique du Nord se présente comme un acte indispensable et qui devrait être immédiatement le seul moyen de rétablir une tranquillité et un ordre stable dans l'Europe Orientale.\nVeuillez agréer, Monsieur le Président, l'assurance de notre haute considération.\n\nG. SYDORENKO\nMinistre des Voies et Communications\nChef de la Délégation de la République Ukrainienne.",
+        "notes": "Підпис надруковано, власноручного підпису немає; олівцева нумерація аркуша «10»"
+      },
+      "uncertain": []
+    }]
+  }
+}
