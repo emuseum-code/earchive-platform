@@ -1,4 +1,4 @@
-# Живий сервер (той самий VPS, що й музейний портал). Порти 80/443 тримає Caddy порталу (/opt/mincult).
+# Живий сервер (той самий VPS, що й архівний портал). Порти 80/443 тримає Caddy порталу (/opt/mincult).
 # Наш nginx нічого не публікує, а підключається до мережі mincult_default під іменем books-web;
 # Caddy бере сайт із /opt/caddy-sites/books.caddy.
 services:

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** Запуск «Перевірити AI» для запису (ТЗ 8.3). */
+/** Запуск «Перевірити AI» для документа (ТЗ 8.3). */
 class AiCheck extends Model
 {
     protected $guarded = ['id'];

@@ -35,7 +35,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
-/** Книги та їхні картки (ТЗ 4.1, 10). */
+/** Справи та їхні картки (ТЗ 4.1, 10). */
 class BookResource extends Resource
 {
     use Access;
@@ -53,9 +53,9 @@ class BookResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Облік сканів';
 
-    protected static ?string $modelLabel = 'книга';
+    protected static ?string $modelLabel = 'справа';
 
-    protected static ?string $pluralModelLabel = 'Книги';
+    protected static ?string $pluralModelLabel = 'Справи';
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -66,7 +66,7 @@ class BookResource extends Resource
 
     public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
     {
-        return array_filter(['Музей' => $record->museum?->name, 'Фонд' => $record->fund?->name]);
+        return array_filter(['Архів' => $record->museum?->name, 'Фонд' => $record->fund?->name]);
     }
 
     protected static ?int $navigationSort = 3;
@@ -79,19 +79,19 @@ class BookResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([Section::make()->columnSpanFull()->schema([Grid::make(3)->schema([
-            TextInput::make('title')->label('Назва книги')->required()->columnSpan(2),
-            TextInput::make('book_number')->label('Номер / шифр книги'),
-            Select::make('museum_id')->label('Музей')->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id'))
+            TextInput::make('title')->label('Назва справи')->required()->columnSpan(2),
+            TextInput::make('book_number')->label('Номер / шифр справи'),
+            Select::make('museum_id')->label('Архів')->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id'))
                 ->required()->searchable()->live(),
             Select::make('fund_id')->label('Напрям обліку / фонд')->options(fn (Get $get) => Fund::where('museum_id', $get('museum_id'))->pluck('name', 'id'))
-                ->helperText('Після збереження всі записи книги перейдуть у цей фонд (і музей).'),
-            Select::make('book_type')->label('Тип книги')->options(BookType::options())->required(),
+                ->helperText('Після збереження всі документи справи перейдуть у цей фонд (і архів).'),
+            Select::make('book_type')->label('Тип справи')->options(BookType::options())->required(),
             Select::make('recognition_template_id')->label('Шаблон розпізнавання')->options(fn () => RecognitionTemplate::where('is_active', true)->pluck('name', 'id'))
-                ->helperText('Порожньо — за типом книги.'),
+                ->helperText('Порожньо — за типом справи.'),
             TextInput::make('years')->label('Роки ведення'),
-            TextInput::make('language')->label('Мова записів'),
+            TextInput::make('language')->label('Мова документів'),
             TextInput::make('expected_pages')->label('Очікувана кількість сторінок')->numeric()
-                ->helperText('Без неї наявність сканів не означає повноти книги.'),
+                ->helperText('Без неї наявність сканів не означає повноти справи.'),
             TextInput::make('folder_path')->label('Папка у сховищі')->disabled()->columnSpan(2),
             Textarea::make('notes')->label('Примітки')->rows(2)->columnSpanFull(),
         ])])]);
@@ -101,18 +101,18 @@ class BookResource extends Resource
     {
         return $schema->components([
             Section::make()->columnSpanFull()->schema([Grid::make(4)->schema([
-                TextEntry::make('museum.name')->label('Музей')->columnSpan(2),
+                TextEntry::make('museum.name')->label('Архів')->columnSpan(2),
                 TextEntry::make('fund.name')->label('Напрям обліку / фонд')->placeholder('—'),
-                TextEntry::make('book_type')->label('Тип книги')->badge(),
+                TextEntry::make('book_type')->label('Тип справи')->badge(),
                 TextEntry::make('folder_path')->label('Шлях до папки')->fontFamily('mono')->size('xs')->columnSpan(2)->copyable(),
                 TextEntry::make('uid')->label('Ідентифікатор')->fontFamily('mono')->size('xs')->copyable(),
-                TextEntry::make('template.name')->label('Шаблон розпізнавання')->placeholder('За типом книги')
+                TextEntry::make('template.name')->label('Шаблон розпізнавання')->placeholder('За типом справи')
                     ->suffix(fn (Book $b) => $b->template ? ' · v'.$b->template->version : ''),
                 TextEntry::make('scans_count')->label('Сканів')
                     ->suffix(fn (Book $b) => $b->expected_pages ? ' з '.$b->expected_pages.' очікуваних' : ' (очікувана кількість невідома)'),
                 TextEntry::make('recognition')->label('Розпізнавання')->state(fn (Book $b) => $b->recognitionProgress().'%')
                     ->helperText(fn (Book $b) => $b->scans_recognized.' сторінок розпізнано'),
-                TextEntry::make('records_count')->label('Отримано записів')->helperText(fn (Book $b) => $b->records_verified.' перевірено · '.$b->records_adapted.' адаптовано'),
+                TextEntry::make('records_count')->label('Отримано документів')->helperText(fn (Book $b) => $b->records_verified.' перевірено · '.$b->records_adapted.' адаптовано'),
                 TextEntry::make('errors')->label('Помилки')->state(fn (Book $b) => $b->scans_failed + $b->scans_missing)
                     ->color(fn ($state) => $state ? 'danger' : null)
                     ->helperText(fn (Book $b) => $b->scans_failed.' розпізнавання · '.$b->scans_missing.' недоступних файлів'),
@@ -127,7 +127,7 @@ class BookResource extends Resource
         return $table
             ->defaultSort('title')
             ->columns([
-                TextColumn::make('title')->label('Книга')->searchable()->sortable()->weight('medium')->wrap()
+                TextColumn::make('title')->label('Справа')->searchable()->sortable()->weight('medium')->wrap()
                     ->description(fn (Book $b) => $b->museum?->name),
                 TextColumn::make('fund.name')->label('Фонд')->toggleable()->placeholder('—'),
                 TextColumn::make('book_type')->label('Тип')->badge()->toggleable(),
@@ -135,7 +135,7 @@ class BookResource extends Resource
                 TextColumn::make('recognition')->label('Розпізнано')->state(fn (Book $b) => $b->recognitionProgress())
                     ->formatStateUsing(fn ($state) => $state.'%')->alignEnd()
                     ->color(fn ($state) => $state === 100 ? 'success' : ($state ? 'warning' : 'gray')),
-                TextColumn::make('records_count')->label('Записів')->sortable()->alignEnd(),
+                TextColumn::make('records_count')->label('Документів')->sortable()->alignEnd(),
                 TextColumn::make('verification')->label('Перевірено')->state(fn (Book $b) => $b->verificationProgress())
                     ->formatStateUsing(fn ($state, Book $b) => $b->records_verified.' · '.$state.'%')->alignEnd()
                     ->color(fn ($state) => $state === 100 ? 'success' : ($state ? 'warning' : 'gray')),
@@ -144,23 +144,23 @@ class BookResource extends Resource
                 TextColumn::make('synced_at')->label('Синхронізовано')->since()->sortable()->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('museum_id')->label('Музей')->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id'))->searchable(),
+                SelectFilter::make('museum_id')->label('Архів')->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id'))->searchable(),
                 SelectFilter::make('fund_id')->label('Фонд')->relationship('fund', 'name'),
-                SelectFilter::make('book_type')->label('Тип книги')->options(BookType::options()),
+                SelectFilter::make('book_type')->label('Тип справи')->options(BookType::options()),
                 TernaryFilter::make('has_errors')->label('Є помилки')
                     ->queries(true: fn ($query) => $query->where(fn ($w) => $w->where('scans_failed', '>', 0)->orWhere('scans_missing', '>', 0)),
                         false: fn ($query) => $query->where('scans_failed', 0)->where('scans_missing', 0)),
             ])
             ->recordActions([static::reviewAction(), EditAction::make()->label('')])
             ->toolbarActions([
-                \App\Filament\Support\Ai::item(BulkAction::make('recognize')->label('Розпізнати вибрані книги'))
+                \App\Filament\Support\Ai::item(BulkAction::make('recognize')->label('Розпізнати вибрані справи'))
                     ->visible(fn () => auth()->user()->canOperate())->requiresConfirmation()
-                    ->modalDescription('Нерозпізнані та помилкові сторінки вибраних книг буде поставлено в чергу Gemini AI.')
+                    ->modalDescription('Нерозпізнані та помилкові сторінки вибраних справ буде поставлено в чергу Gemini AI.')
                     ->action(fn (Collection $books) => static::recognize($books)),
             ]);
     }
 
-    /** «Провести звірку» з переліку книг (ТЗ 8.1): перший неперевірений запис книги. */
+    /** «Провести звірку» з переліку справ (ТЗ 8.1): перший неперевірений документ справи. */
     public static function reviewAction(): Action
     {
         return Action::make('review')->label('Провести звірку')->icon('heroicon-o-document-magnifying-glass')->color('primary')
@@ -175,31 +175,31 @@ class BookResource extends Resource
 
     /**
      * Завантаження сканів з браузера (сховище на зовнішніх дисках, як у пілоті Лисичанська).
-     * Файли кладуться в папку книги в кореневій директорії й одразу реєструються як сторінки, без синхронізації.
+     * Файли кладуться в папку справи в кореневій директорії й одразу реєструються як сторінки, без синхронізації.
      * Браузер зменшує зображення до storage.upload_max_px (довша сторона) ще до відправлення на сервер.
-     * $book = null: нова книга (музей, фонд, назва); $museumId — музей, вибраний наперед (сторінка «Робота з музеєм»).
+     * $book = null: нова справа (архів, фонд, назва); $museumId — архів, вибраний наперед (сторінка «Робота з архівом»).
      */
     public static function uploadAction(?Book $book = null, ?int $museumId = null): Action
     {
         $new = $book === null;
 
         return Action::make($new ? 'uploadNewBook' : 'uploadScans')
-            ->label($new ? 'Нова книга зі сканів' : 'Завантажити скани')
+            ->label($new ? 'Нова справа зі сканів' : 'Завантажити скани')
             ->icon('heroicon-o-arrow-up-tray')
             ->color($new ? 'primary' : 'gray')
             ->visible(fn () => auth()->user()->canOperate())
-            ->modalHeading($new ? 'Нова книга: завантажити скани' : 'Завантажити скани в книгу')
+            ->modalHeading($new ? 'Нова справа: завантажити скани' : 'Завантажити скани в справу')
             ->modalDescription(fn () => 'JPG, PNG або TIFF, до 50 МБ кожен. Порядок сторінок: «обложка» перша, «посл.стр.» остання, решта за назвою файлу (IMG_0001, IMG_0002…).'
                 .(static::uploadMaxPx() ? ' JPG і PNG зменшуються в браузері до '.static::uploadMaxPx().' px по довшій стороні.' : ''))
             ->modalSubmitActionLabel('Завантажити')
             ->schema(array_filter([
-                $new ? Select::make('museum_id')->label('Музей')->required()->searchable()->preload()->live()->default($museumId)
+                $new ? Select::make('museum_id')->label('Архів')->required()->searchable()->preload()->live()->default($museumId)
                     ->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id')) : null,
                 $new ? Select::make('fund_id')->label('Фонд / група збереження')->searchable()
-                    ->helperText('Перевірте фонд: це інвентарна книга, в якій предмети облікові. Усі записи книги отримають саме цей фонд, незалежно від матеріалу предметів.')
+                    ->helperText('Перевірте фонд: це справа, в якій предмети облікові. Усі документи справи отримають саме цей фонд, незалежно від матеріалу предметів.')
                     ->options(fn (Get $get) => Fund::where('museum_id', $get('museum_id'))->orderBy('name')->pluck('name', 'id')) : null,
-                $new ? TextInput::make('title')->label('Назва книги')->required()->maxLength(200)
-                    ->placeholder('Інвентарна книга Д-ІІІ (документи)') : null,
+                $new ? TextInput::make('title')->label('Назва справи')->required()->maxLength(200)
+                    ->placeholder('Справа Д-ІІІ (документи)') : null,
                 FileUpload::make('files')->label('Скани')->required()->multiple()->storeFiles(false)
                     ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/tiff'])->maxSize(51200)->maxFiles(500)
                     ->panelLayout('grid')->reorderable(false)->previewable(false)
@@ -211,7 +211,7 @@ class BookResource extends Resource
             ->action(function (array $data) use ($book) {
                 $root = rtrim((string) \App\Support\Settings::get('storage.root'), '/');
                 if ($root === '' || ! is_dir($root) || ! is_writable($root)) {
-                    Notification::make()->danger()->title('Сховище недоступне для запису')->body($root ?: 'Коренева директорія не задана')->send();
+                    Notification::make()->danger()->title('Сховище недоступне для документа')->body($root ?: 'Коренева директорія не задана')->send();
 
                     return;
                 }
@@ -232,11 +232,11 @@ class BookResource extends Resource
                     }
                     $names[] = basename($target);
                 }
-                // без синхронізації: реєструються лише щойно завантажені файли цієї книги
+                // без синхронізації: реєструються лише щойно завантажені файли цієї справи
                 [$new, $errors] = app(\App\Services\StorageSync::class)->registerUploaded($book, array_values(array_unique($names)));
                 \App\Support\Activity::log('scans.uploaded', $book, "Завантажено сканів: {$saved}, нових сторінок: {$new}");
                 Notification::make()->{$errors ? 'warning' : 'success'}()->title("Завантажено сканів: {$saved}")
-                    ->body("Нових сторінок у книзі: {$new}. Тепер їх можна розпізнати (Обробка → Розпізнати)."
+                    ->body("Нових сторінок у справі: {$new}. Тепер їх можна розпізнати (Обробка → Розпізнати)."
                         .($errors ? ' Помилки: '.implode('; ', array_slice($errors, 0, 3)) : ''))->send();
 
                 return redirect(static::getUrl('view', ['record' => $book]));

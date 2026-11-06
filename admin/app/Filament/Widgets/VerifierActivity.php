@@ -9,7 +9,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
 
-/** Робота верифікаторів: скільки записів звірено, зауважень і AI-перевірок — для планування звірки великого масиву. */
+/** Робота верифікаторів: скільки документів звірено, зауважень і AI-перевірок — для планування звірки великого масиву. */
 class VerifierActivity extends TableWidget
 {
     protected static bool $isDiscovered = false;

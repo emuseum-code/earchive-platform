@@ -17,12 +17,12 @@ use OpenSpout\Writer\CSV\Writer as CsvWriter;
 use OpenSpout\Writer\XLSX\Writer as XlsxWriter;
 
 /**
- * Експорт вибраних або відфільтрованих записів у CSV, XLSX, JSON і шаблон імпорту РМФУ (ТЗ 11).
- * Фіксує користувача, час, склад і версії записів. Створений файл — не підтвердження приймання реєстром.
+ * Експорт вибраних або відфільтрованих документів у CSV, XLSX, JSON і шаблон імпорту РМФУ (ТЗ 11).
+ * Фіксує користувача, час, склад і версії документів. Створений файл — не підтвердження приймання реєстром.
  */
 class ExportService
 {
-    /** Записи для експорту: ids або фільтри з єдиної таблиці; лише в межах доступу автора. */
+    /** Документи для експорту: ids або фільтри з єдиної таблиці; лише в межах доступу автора. */
     public function query(Export $export): Builder
     {
         $f = $export->filters ?? [];
@@ -51,11 +51,11 @@ class ExportService
             $schema = $registry ? (RegistrySchema::find($export->registry_schema_id) ?? RegistrySchema::active()) : null;
             $records = $this->query($export)->get();
             if ($registry) {
-                // у реєстр — лише перевірені записи з актуальною адаптацією без помилок (ТЗ 9)
+                // у реєстр — лише перевірені документи з актуальною адаптацією без помилок (ТЗ 9)
                 $skipped = $records->reject(fn ($r) => $r->isExportReady())->count();
                 $records = $records->filter(fn ($r) => $r->isExportReady())->values();
                 if ($records->isEmpty()) {
-                    throw new \DomainException('Немає записів, готових до експорту в реєстр'.($skipped ? " (пропущено неготових: {$skipped})" : '').'.');
+                    throw new \DomainException('Немає документів, готових до експорту в реєстр'.($skipped ? " (пропущено неготових: {$skipped})" : '').'.');
                 }
             }
             [$header, $rows] = $registry ? $this->registryRows($records, $schema) : $this->sourceRows($records);
@@ -80,7 +80,7 @@ class ExportService
             }
             $export->update(['status' => JobStatus::Done, 'file_path' => $path, 'file_size' => filesize($abs), 'records_count' => $records->count(),
                 'registry_schema_id' => $schema?->id, 'finished_at' => now()]);
-            Activity::log('export.created', $export, $export->format->getLabel().': записів '.$records->count(), [], $export->user);
+            Activity::log('export.created', $export, $export->format->getLabel().': документів '.$records->count(), [], $export->user);
         } catch (\Throwable $e) {
             $export->update(['status' => JobStatus::Failed, 'error' => $e->getMessage(), 'finished_at' => now()]);
             if (! $e instanceof \DomainException) {
@@ -103,8 +103,8 @@ class ExportService
 
     private function sourceRows($records): array
     {
-        $header = array_merge(['ID', 'Музей', 'Фонд', 'Книга', 'Сторінки'], array_map(fn ($f) => $f[0], Record::FIELDS),
-            ['Додаткові поля', 'Звірка', 'Адаптація', 'Версія запису', 'Перевірив', 'Дата перевірки']);
+        $header = array_merge(['ID', 'Архів', 'Фонд', 'Справа', 'Сторінки'], array_map(fn ($f) => $f[0], Record::FIELDS),
+            ['Додаткові поля', 'Звірка', 'Адаптація', 'Версія документа', 'Перевірив', 'Дата перевірки']);
         $rows = $records->map(fn (Record $r) => array_merge(
             [$r->uid, $r->museum?->name, $r->fund?->name, $r->book?->title, $r->pageLabel()],
             array_map(fn ($f) => $r->$f, array_keys(Record::FIELDS)),

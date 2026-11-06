@@ -20,7 +20,7 @@ class SyncStorage extends Command
             'scheduled' => $this->option('scheduled'), 'status' => 'queued']);
         Activity::log('sync.started', $run, 'Консоль: '.($run->scope_path ?: 'усе сховище'));
         $run = $sync->run($run);
-        $this->table(['Папок', 'Файлів', 'Нових книг', 'Нових сканів', 'Змінених', 'Недоступних', 'Невизначених папок', 'Помилок'],
+        $this->table(['Папок', 'Файлів', 'Нових справ', 'Нових сканів', 'Змінених', 'Недоступних', 'Невизначених папок', 'Помилок'],
             [array_map(fn ($v) => (int) $v, [$run->folders_found, $run->files_found, $run->new_books, $run->new_scans, $run->changed_scans, $run->missing_scans, $run->unmapped_folders, $run->errors_count])]);
         foreach ($run->report['errors'] ?? [] as $e) {
             $this->error($e);

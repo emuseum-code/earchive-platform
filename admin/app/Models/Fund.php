@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** Напрям обліку або фонд музею. */
+/** Напрям обліку або фонд архіву. */
 class Fund extends Model
 {
     protected $guarded = ['id'];

@@ -20,9 +20,9 @@ enum FolderLevel: string implements HasColor, HasLabel
     {
         return match ($this) {
             self::Territory => 'Територія',
-            self::Museum => 'Музей',
+            self::Museum => 'Архів',
             self::Fund => 'Напрям обліку / фонд',
-            self::Book => 'Книга',
+            self::Book => 'Справа',
             self::Skip => 'Пропустити',
         };
     }

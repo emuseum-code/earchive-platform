@@ -6,7 +6,7 @@
 @endphp
 <x-filament-panels::page>
     @if ($stale)
-        <div class="bk-alert bk-alert--warning">Потребує оновлення: джерельний запис змінився після адаптації (зараз v{{ $a->record->lock_version }}, адаптовано з v{{ $a->source_record_version }}). Запустіть адаптацію повторно.</div>
+        <div class="bk-alert bk-alert--warning">Потребує оновлення: джерельний документ змінився після адаптації (зараз v{{ $a->record->lock_version }}, адаптовано з v{{ $a->source_record_version }}). Запустіть адаптацію повторно.</div>
     @endif
     @if (! $a->is_current)<div class="bk-alert bk-alert--info">Це не поточна версія адаптації.</div>@endif
     <div class="bk-card">
@@ -18,7 +18,7 @@
         </div>
         <div class="bk-table-wrap">
             <table class="bk-table bk-table--adapt">
-                <thead><tr><th style="width:24%">Поле реєстру</th><th style="width:30%">Джерело в книзі</th><th>Адаптоване значення</th></tr></thead>
+                <thead><tr><th style="width:24%">Поле реєстру</th><th style="width:30%">Джерело в справі</th><th>Адаптоване значення</th></tr></thead>
                 <tbody>
                 @foreach ($a->schema->fields as $f)
                     @php $fi = $issues->get($f->key, collect()); $src = $a->sources[$f->key] ?? null; @endphp

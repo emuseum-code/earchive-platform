@@ -9,7 +9,7 @@ use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
-/** Картка книги (ТЗ 4.1): статуси, прогрес, сторінки. */
+/** Картка справи (ТЗ 4.1): статуси, прогрес, сторінки. */
 class ViewBook extends ViewRecord
 {
     protected static string $resource = BookResource::class;
@@ -25,17 +25,17 @@ class ViewBook extends ViewRecord
 
         return [
             BookResource::reviewAction()->record($this->record),
-            Action::make('records')->label('Записи книги')->icon('heroicon-o-table-cells')->color('gray')
+            Action::make('records')->label('Документи справи')->icon('heroicon-o-table-cells')->color('gray')
                 ->url(RecordResource::getUrl('index', ['filters' => ['book_id' => ['value' => $this->record->id]]])),
             Action::make('pages')->label('Переглянути сторінки')->icon('heroicon-o-photo')->color('gray')
                 ->url(BookResource::getUrl('pages', ['record' => $this->record])),
             BookResource::uploadAction($this->record),
-            \App\Filament\Support\Ai::button(Action::make('recognize')->label('Розпізнати книгу'))
+            \App\Filament\Support\Ai::button(Action::make('recognize')->label('Розпізнати справу'))
                 ->tooltip('Нові, помилкові та змінені сторінки')->visible($u->canOperate())
-                ->requiresConfirmation()->modalDescription('У чергу Gemini AI підуть нерозпізнані, помилкові та змінені сторінки книги.')
+                ->requiresConfirmation()->modalDescription('У чергу Gemini AI підуть нерозпізнані, помилкові та змінені сторінки справи.')
                 ->action(fn () => BookResource::recognize([$this->record])),
             ActionGroup::make([
-                \App\Filament\Support\Ai::item(Action::make('recognizeAll')->label('Розпізнати всю книгу повторно'))
+                \App\Filament\Support\Ai::item(Action::make('recognizeAll')->label('Розпізнати всю справу повторно'))
                     ->requiresConfirmation()->modalDescription('Кожна сторінка отримає нову версію результату. Ручні правки не перезаписуються: зміни прийдуть як пропозиції.')
                     ->action(fn () => BookResource::recognize([$this->record], false)),
                 Action::make('refresh')->label('Перерахувати лічильники')->icon('heroicon-o-calculator')

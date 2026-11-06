@@ -17,9 +17,9 @@ use Illuminate\Support\Collection;
 use Livewire\Attributes\Url;
 
 /**
- * Робота з одним музеєм: вибір музею (територія → музей), далі його фонди й книги з прогресом,
- * додавання сканів у цей музей, перехід до звірки, записів і сторінок книги без пошуку по всій системі.
- * Скани, як і раніше, лежать у кореневій директорії сховища (папка музею → фонд → книга).
+ * Робота з одним архівом: вибір архіву (територія → архів), далі його фонди й справи з прогресом,
+ * додавання сканів у цей архів, перехід до звірки, документів і сторінок справи без пошуку по всій системі.
+ * Скани, як і раніше, лежать у кореневій директорії сховища (папка архіву → фонд → справа).
  */
 class MuseumDesk extends Page
 {
@@ -27,7 +27,7 @@ class MuseumDesk extends Page
 
     protected static string|\UnitEnum|null $navigationGroup = 'Облік сканів';
 
-    protected static ?string $navigationLabel = 'Робота з музеєм';
+    protected static ?string $navigationLabel = 'Робота з архівом';
 
     protected static ?int $navigationSort = 0;
 
@@ -48,7 +48,7 @@ class MuseumDesk extends Page
     public function mount(): void
     {
         if ($this->museum && ! $this->current()) {
-            $this->museum = null; // музей недоступний цьому користувачу — показуємо вибір
+            $this->museum = null; // архів недоступний цьому користувачу — показуємо вибір
         }
     }
 
@@ -59,15 +59,15 @@ class MuseumDesk extends Page
 
     public function getTitle(): string|Htmlable
     {
-        return $this->current()?->name ?? 'Робота з музеєм';
+        return $this->current()?->name ?? 'Робота з архівом';
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return $this->current() ? null : 'Оберіть музей, щоб працювати лише з його книгами, сканами й записами.';
+        return $this->current() ? null : 'Оберіть архів, щоб працювати лише з його справами, сканами й документами.';
     }
 
-    /** Вибір музею: територія → музеї з кількістю книг і записів. */
+    /** Вибір архіву: територія → архіви з кількістю справ і документів. */
     public function pickerGroups(): Collection
     {
         $museums = Museum::visibleTo(auth()->user())
@@ -81,7 +81,7 @@ class MuseumDesk extends Page
             ->sortBy(fn ($g) => [$g['last'] ? 1 : 0, $g['name']])->values();
     }
 
-    /** Книги музею, згруповані за фондами (книги без фонду — окремою групою). */
+    /** Справи архіву, згруповані за фондами (справи без фонду — окремою групою). */
     public function fundGroups(): Collection
     {
         $books = Book::visibleTo(auth()->user())->where('museum_id', $this->museum)->with('fund')->orderBy('title')->get();
@@ -123,15 +123,15 @@ class MuseumDesk extends Page
 
         return [
             BookResource::uploadAction(null, $this->museum)->label('Додати скани'),
-            Action::make('review')->label('Звірка: наступний запис')->icon('heroicon-o-document-magnifying-glass')
+            Action::make('review')->label('Звірка: наступний документ')->icon('heroicon-o-document-magnifying-glass')
                 ->url(fn () => $this->reviewUrl())->visible(fn () => $this->reviewUrl() !== null),
-            Action::make('records')->label('Записи музею')->icon('heroicon-o-table-cells')->color('gray')
+            Action::make('records')->label('Документи архіву')->icon('heroicon-o-table-cells')->color('gray')
                 ->url(fn () => $this->recordsUrl()),
             \App\Filament\Support\Ai::button(Action::make('recognize')->label('Розпізнати нові сторінки'))
                 ->visible(fn () => auth()->user()->canOperate())->requiresConfirmation()
-                ->modalDescription('У чергу підуть нерозпізнані, помилкові та змінені сторінки всіх доступних вам книг цього музею.')
+                ->modalDescription('У чергу підуть нерозпізнані, помилкові та змінені сторінки всіх доступних вам справ цього архіву.')
                 ->action(fn () => BookResource::recognize(Book::visibleTo(auth()->user())->where('museum_id', $this->museum)->get())),
-            Action::make('other')->label('Інший музей')->icon('heroicon-o-arrow-left')->color('gray')
+            Action::make('other')->label('Інший архів')->icon('heroicon-o-arrow-left')->color('gray')
                 ->url(static::getUrl()),
         ];
     }

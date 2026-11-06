@@ -16,7 +16,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-/** Довідники музейного реєстру для зіставлення значень (ТЗ 9). */
+/** Довідники архівного опису для зіставлення значень (ТЗ 9). */
 class DictionaryResource extends Resource
 {
     use Access;

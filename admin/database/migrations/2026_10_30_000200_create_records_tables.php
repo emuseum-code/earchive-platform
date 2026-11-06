@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Розпізнавання, єдина таблиця записів, версії, звірка та AI-перевірка (ТЗ 6–8). */
+/** Розпізнавання, єдина таблиця документів, версії, звірка та AI-перевірка (ТЗ 6–8). */
 return new class extends Migration
 {
     public function up(): void
@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('type', 20)->index();
             $table->string('status', 20)->default('queued')->index();
             $table->nullableMorphs('target');
-            $table->string('batch_key', 64)->nullable()->index()->comment('Одна команда запуску для книги/музею');
+            $table->string('batch_key', 64)->nullable()->index()->comment('Одна команда запуску для справи/архіву');
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->unsignedSmallInteger('priority')->default(100);
             $table->unsignedSmallInteger('attempts')->default(0);
@@ -69,7 +69,7 @@ return new class extends Migration
             $table->unique(['scan_id', 'version']);
         });
 
-        // Єдина таблиця: один рядок = один обліковий запис книги (ТЗ 7)
+        // Єдина таблиця: один рядок = один документ справи (ТЗ 7)
         Schema::create('records', function (Blueprint $table) {
             $table->id();
             $table->uuid('uid')->unique();
@@ -77,10 +77,10 @@ return new class extends Migration
             $table->foreignId('museum_id')->constrained()->cascadeOnDelete();
             $table->foreignId('fund_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('recognition_result_id')->nullable()->constrained()->nullOnDelete();
-            $table->unsignedInteger('sequence')->default(0)->comment('Порядок запису в книзі');
+            $table->unsignedInteger('sequence')->default(0)->comment('Порядок документа в справі');
             // Ідентифікація
             $table->string('record_no', 50)->nullable()->index()->comment('№ по порядку');
-            $table->string('record_date', 100)->nullable()->comment('Дата запису');
+            $table->string('record_date', 100)->nullable()->comment('Дата документа');
             $table->string('account_number', 100)->nullable()->index()->comment('Обліковий номер (КП)');
             $table->string('inventory_number', 100)->nullable()->index()->comment('Інвентарний номер / шифр');
             // Предмет
@@ -101,7 +101,7 @@ return new class extends Migration
             $table->string('department')->nullable()->comment('Відділ або збірка');
             $table->text('location')->nullable()->comment('Місцезнаходження / топографія');
             $table->text('notes')->nullable();
-            // Дані, що не лягли в основні поля, з назвами граф книги (ТЗ 6.2)
+            // Дані, що не лягли в основні поля, з назвами граф справи (ТЗ 6.2)
             $table->json('extra_fields')->nullable();
             // Нерозбірливі / неоднозначні поля: {field: "причина"}
             $table->json('uncertain_fields')->nullable();
@@ -126,19 +126,19 @@ return new class extends Migration
             $table->index(['book_id', 'sequence']);
         });
 
-        // Зв’язок запису з джерельними сторінками: кілька записів на сторінці, продовження між сторінками (ТЗ 6.2)
+        // Зв’язок документа з джерельними сторінками: кілька документів на сторінці, продовження між сторінками (ТЗ 6.2)
         Schema::create('record_pages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('record_id')->constrained()->cascadeOnDelete();
             $table->foreignId('scan_id')->constrained()->cascadeOnDelete();
             $table->unsignedSmallInteger('position')->default(1);
             $table->boolean('is_continuation')->default(false);
-            $table->json('region')->nullable()->comment('Область запису на сторінці {x,y,w,h}');
+            $table->json('region')->nullable()->comment('Область документа на сторінці {x,y,w,h}');
             $table->timestamps();
             $table->unique(['record_id', 'scan_id']);
         });
 
-        // Історія змін запису: кожна правка, розпізнавання, прийнята AI-пропозиція — окрема версія (ТЗ 7, 8.4)
+        // Історія змін документа: кожна правка, розпізнавання, прийнята AI-пропозиція — окрема версія (ТЗ 7, 8.4)
         Schema::create('record_versions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('record_id')->constrained()->cascadeOnDelete();
@@ -179,8 +179,8 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('processing_job_id')->nullable()->constrained()->nullOnDelete();
             $table->string('status', 20)->default('queued');
-            $table->unsignedInteger('record_version')->comment('Версія запису, яку перевіряли');
-            $table->boolean('whole_record')->default(false)->comment('Без зауважень — перевірка всього запису');
+            $table->unsignedInteger('record_version')->comment('Версія документа, яку перевіряли');
+            $table->boolean('whole_record')->default(false)->comment('Без зауважень — перевірка всього документа');
             $table->json('remark_ids')->nullable();
             $table->json('scan_ids')->nullable();
             $table->json('request')->nullable();

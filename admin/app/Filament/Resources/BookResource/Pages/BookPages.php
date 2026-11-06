@@ -7,7 +7,7 @@ use Filament\Resources\Pages\Concerns\InteractsWithRecord;
 use Filament\Resources\Pages\Page;
 use Livewire\Attributes\Url;
 
-/** Перегляд сторінок книги: мініатюри, оригінал, масштаб, поворот, перехід (ТЗ 4.3). */
+/** Перегляд сторінок справи: мініатюри, оригінал, масштаб, поворот, перехід (ТЗ 4.3). */
 class BookPages extends Page
 {
     use InteractsWithRecord;

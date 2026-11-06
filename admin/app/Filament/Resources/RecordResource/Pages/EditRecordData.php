@@ -10,7 +10,7 @@ use Filament\Resources\Pages\EditRecord;
 use Filament\Support\Exceptions\Halt;
 use Illuminate\Database\Eloquent\Model;
 
-/** Редагування запису з перевіркою версії: чужі зміни не перезаписуються непомітно (ТЗ 5). */
+/** Редагування документа з перевіркою версії: чужі зміни не перезаписуються непомітно (ТЗ 5). */
 class EditRecordData extends EditRecord
 {
     protected static string $resource = RecordResource::class;
@@ -24,7 +24,7 @@ class EditRecordData extends EditRecord
 
     public function getTitle(): string
     {
-        return 'Запис № '.($this->record->record_no ?: $this->record->id);
+        return 'Документ № '.($this->record->record_no ?: $this->record->id);
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model

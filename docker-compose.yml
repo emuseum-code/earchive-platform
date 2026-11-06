@@ -1,6 +1,6 @@
-# Облік інвентарних книг: cp admin/.env.docker.example admin/.env && docker compose up -d --build
+# Архів: розпізнавання архівних документів: cp admin/.env.docker.example admin/.env && docker compose up -d --build
 # Адмінка: http://<сервер>:8093/admin
-# Імена сервісів з префіксом books-, бо на живому сервері вебсервер підключено ще й до мережі музейного порталу.
+# Імена сервісів з префіксом books-, бо на живому сервері вебсервер підключено ще й до мережі архівного порталу.
 services:
   books-app:                 # Laravel 13 + Filament 5 (PHP-FPM)
     build: ./admin

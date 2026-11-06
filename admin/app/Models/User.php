@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-/** Персональний акаунт працівника (ТЗ 5): роль і межі доступу музеями та книгами. */
+/** Персональний акаунт працівника (ТЗ 5): роль і межі доступу архівами та справами. */
 class User extends Authenticatable implements FilamentUser
 {
     /** Демо-акаунти для кнопок швидкого входу на сторінці логіну. */
@@ -80,7 +80,7 @@ class User extends Authenticatable implements FilamentUser
         return $this->canVerify();
     }
 
-    /** Ідентифікатори доступних книг (null — усі). */
+    /** Ідентифікатори доступних справ (null — усі). */
     public function bookScope(): ?array
     {
         if ($this->isAdmin()) {
@@ -93,7 +93,7 @@ class User extends Authenticatable implements FilamentUser
             ->pluck('id')->all());
     }
 
-    /** Ідентифікатори музеїв, у яких користувач бачить хоча б одну книгу (null — усі). */
+    /** Ідентифікатори архівів, у яких користувач бачить хоча б одну справу (null — усі). */
     public function museumScope(): ?array
     {
         if ($this->isAdmin()) {

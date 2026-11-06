@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Адаптація до музейного реєстру, довідники, експорт, налаштування та журнал (ТЗ 9, 11, 12). */
+/** Адаптація до архівного опису, довідники, експорт, налаштування та журнал (ТЗ 9, 11, 12). */
 return new class extends Migration
 {
     public function up(): void
@@ -52,18 +52,18 @@ return new class extends Migration
             $table->string('value');
             $table->string('code', 50)->nullable();
             $table->foreignId('parent_id')->nullable()->constrained('dictionary_items')->nullOnDelete();
-            $table->json('synonyms')->nullable()->comment('Варіанти з книг: «хорошее», «удовлетворит.» …');
+            $table->json('synonyms')->nullable()->comment('Варіанти з справ: «хорошее», «удовлетворит.» …');
             $table->unsignedSmallInteger('sort')->default(0);
             $table->timestamps();
             $table->index(['dictionary_id', 'value']);
         });
 
-        // Таблиця відповідностей поле книги → поле реєстру (ТЗ 9)
+        // Таблиця відповідностей поле справи → поле реєстру (ТЗ 9)
         Schema::create('adaptation_rules', function (Blueprint $table) {
             $table->id();
             $table->foreignId('registry_schema_id')->constrained()->cascadeOnDelete();
             $table->string('target_field', 80);
-            $table->json('source_fields')->comment('Поля запису книги');
+            $table->json('source_fields')->comment('Поля документа справи');
             $table->string('transform', 30)->default('copy')
                 ->comment('copy, translate, date, year_from, year_to, sizes, dictionary, number, money, regex, constant, ai');
             $table->json('params')->nullable();
@@ -75,13 +75,13 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Адаптоване представлення запису у форматі реєстру; джерельні та цільові значення окремо (ТЗ 9)
+        // Адаптоване представлення документа у форматі реєстру; джерельні та цільові значення окремо (ТЗ 9)
         Schema::create('adaptations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('record_id')->constrained()->cascadeOnDelete();
             $table->foreignId('registry_schema_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('version')->default(1);
-            $table->unsignedInteger('source_record_version')->comment('Версія джерельного запису');
+            $table->unsignedInteger('source_record_version')->comment('Версія джерельного документа');
             $table->unsignedInteger('rules_version')->default(1);
             $table->string('status', 30)->default('processing')->index();
             $table->boolean('is_current')->default(true)->index();
@@ -104,7 +104,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('format', 20);
             $table->string('status', 20)->default('queued');
-            $table->json('filters')->nullable()->comment('Фільтр або вибрані записи');
+            $table->json('filters')->nullable()->comment('Фільтр або вибрані документи');
             $table->foreignId('registry_schema_id')->nullable()->constrained()->nullOnDelete();
             $table->unsignedInteger('records_count')->default(0);
             $table->string('file_path')->nullable();
@@ -114,7 +114,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Склад і версії експортованих записів; для API — зовнішні ідентифікатори та відповіді (ТЗ 11)
+        // Склад і версії експортованих документів; для API — зовнішні ідентифікатори та відповіді (ТЗ 11)
         Schema::create('export_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('export_id')->constrained()->cascadeOnDelete();

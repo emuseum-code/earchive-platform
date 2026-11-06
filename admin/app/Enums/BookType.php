@@ -5,7 +5,7 @@ namespace App\Enums;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
-/** Тип книги за способом заповнення. */
+/** Тип справи за способом заповнення. */
 enum BookType: string implements HasColor, HasLabel
 {
     use EnumHelpers;

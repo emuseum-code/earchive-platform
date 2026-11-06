@@ -52,7 +52,7 @@ class ProcessingJob extends Model
 
         return match (true) {
             $t instanceof Scan => $t->book?->title.' · '.$t->filename,
-            $t instanceof Record => 'Запис № '.($t->record_no ?: $t->id).' · '.$t->book?->title,
+            $t instanceof Record => 'Документ № '.($t->record_no ?: $t->id).' · '.$t->book?->title,
             $t instanceof Book => $t->title,
             $t instanceof Export => 'Експорт '.$t->format?->getLabel(),
             default => '—',

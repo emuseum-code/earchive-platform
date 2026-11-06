@@ -1,6 +1,6 @@
 <div class="bk-table-wrap">
     <table class="bk-table">
-        <thead><tr><th>Запис</th><th>Інв. номер</th><th>Версія запису</th><th>Версія адаптації</th><th>Приймання реєстром</th></tr></thead>
+        <thead><tr><th>Документ</th><th>Інв. номер</th><th>Версія документа</th><th>Версія адаптації</th><th>Приймання реєстром</th></tr></thead>
         <tbody>
         @foreach ($items as $i)
             <tr><td>№ {{ $i->record?->record_no }}</td><td>{{ $i->record?->inventory_number }}</td><td>v{{ $i->record_version }}</td>

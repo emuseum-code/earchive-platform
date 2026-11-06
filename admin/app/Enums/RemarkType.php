@@ -22,8 +22,8 @@ enum RemarkType: string implements HasColor, HasLabel
     {
         return match ($this) {
             self::Field => 'Помилка в полі',
-            self::MissingRecord => 'Пропущений запис',
-            self::ExtraRecord => 'Зайвий запис',
+            self::MissingRecord => 'Пропущений документ',
+            self::ExtraRecord => 'Зайвий документ',
             self::WrongMerge => 'Помилкове об’єднання',
             self::WrongSplit => 'Помилковий поділ',
             self::Continuation => 'Продовження на іншій сторінці',

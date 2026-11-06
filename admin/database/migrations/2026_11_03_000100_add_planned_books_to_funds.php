@@ -4,13 +4,13 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Скільки інвентарних книг у групі збереження за переліком музею (для прогресу оцифрування). */
+/** Скільки справ у групі збереження за переліком архіву (для прогресу оцифрування). */
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::table('funds', function (Blueprint $table) {
-            $table->unsignedSmallInteger('planned_books')->nullable()->after('code')->comment('Книг за переліком');
+            $table->unsignedSmallInteger('planned_books')->nullable()->after('code')->comment('Справ за переліком');
         });
     }
 

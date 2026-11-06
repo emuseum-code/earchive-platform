@@ -5,7 +5,7 @@ namespace App\Enums;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
-/** Джерело версії запису. */
+/** Джерело версії документа. */
 enum VersionSource: string implements HasColor, HasLabel
 {
     use EnumHelpers;

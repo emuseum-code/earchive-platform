@@ -21,7 +21,7 @@ class Dictionary extends Model
         return mb_strtolower(trim(preg_replace('/\s+/u', ' ', str_replace(['’', 'ʼ', '`'], "'", (string) $s)), ' .,;'));
     }
 
-    /** Знайти значення довідника за точною назвою або синонімом з книги. */
+    /** Знайти значення довідника за точною назвою або синонімом з справи. */
     public static function match(string $code, ?string $raw): ?string
     {
         if ($raw === null || trim($raw) === '') {

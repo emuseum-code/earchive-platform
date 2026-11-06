@@ -26,7 +26,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 
 /**
- * Робочий екран «Провести звірку» (ТЗ 8): ліворуч оригінальний скан, праворуч поля запису,
+ * Робочий екран «Провести звірку» (ТЗ 8): ліворуч оригінальний скан, праворуч поля документа,
  * зауваження, кнопка «Перевірити AI», порівняння й прийняття пропозицій, підтвердження звірки.
  */
 class ReviewRecord extends Page
@@ -68,7 +68,7 @@ class ReviewRecord extends Page
 
     public array $editProposal = [];
 
-    /** Навігація між записами: unchecked — лише неперевірені, all — усі записи книги */
+    /** Навігація між документами: unchecked — лише неперевірені, all — усі документи справи */
     #[Url]
     public string $nav = 'unchecked';
 
@@ -97,7 +97,7 @@ class ReviewRecord extends Page
 
     public function getTitle(): string
     {
-        return 'Звірка: запис № '.($this->record->record_no ?: $this->record->id);
+        return 'Звірка: документ № '.($this->record->record_no ?: $this->record->id);
     }
 
     public function getSubheading(): ?string
@@ -109,7 +109,7 @@ class ReviewRecord extends Page
     {
         return [
             RecordResource::getUrl() => 'Єдина таблиця',
-            RecordResource::getUrl('view', ['record' => $this->record]) => 'Запис № '.($this->record->record_no ?: $this->record->id),
+            RecordResource::getUrl('view', ['record' => $this->record]) => 'Документ № '.($this->record->record_no ?: $this->record->id),
             'Звірка',
         ];
     }
@@ -124,7 +124,7 @@ class ReviewRecord extends Page
         abort_unless($this->canEdit(), 403, 'Звірка доступна верифікатору.');
     }
 
-    /** Сторінки для переглядача: спершу сторінки запису, далі решта книги для контексту. */
+    /** Сторінки для переглядача: спершу сторінки документа, далі решта справи для контексту. */
     #[Computed]
     public function scansList(): array
     {
@@ -447,8 +447,8 @@ class ReviewRecord extends Page
         if ($r = $this->neighbour($dir)) {
             $this->redirect(RecordResource::getUrl('review', ['record' => $r, 'nav' => $this->nav]), navigate: true);
         } else {
-            Notification::make()->info()->title($dir > 0 ? 'Це останній запис' : 'Це перший запис')
-                ->body($this->nav === 'unchecked' ? 'Серед неперевірених записів книги.' : null)->send();
+            Notification::make()->info()->title($dir > 0 ? 'Це останній документ' : 'Це перший документ')
+                ->body($this->nav === 'unchecked' ? 'Серед неперевірених документів справи.' : null)->send();
         }
     }
 }

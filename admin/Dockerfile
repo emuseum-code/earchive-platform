@@ -1,4 +1,4 @@
-# Облік інвентарних книг: Laravel 13 + Filament 5 (PHP-FPM)
+# Архів: розпізнавання архівних документів: Laravel 13 + Filament 5 (PHP-FPM)
 FROM php:8.3-fpm-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

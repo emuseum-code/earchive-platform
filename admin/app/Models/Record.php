@@ -19,15 +19,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
 
-/** Обліковий запис книги — рядок єдиної таблиці (ТЗ 7). */
+/** Документ справи — рядок єдиної таблиці (ТЗ 7). */
 class Record extends Model
 {
     use HasUid, ScopedByBook, SoftDeletes;
 
     /** Основні поля єдиної таблиці: ключ => [назва, група]. Остаточний склад погоджується (ТЗ 16). */
     public const FIELDS = [
-        'record_no' => ['№ запису', 'Ідентифікація'],
-        'record_date' => ['Дата запису', 'Ідентифікація'],
+        'record_no' => ['№ документа', 'Ідентифікація'],
+        'record_date' => ['Дата документа', 'Ідентифікація'],
         'account_number' => ['Обліковий номер (КП)', 'Ідентифікація'],
         'inventory_number' => ['Інвентарний номер', 'Ідентифікація'],
         'title' => ['Назва', 'Предмет'],
@@ -154,7 +154,7 @@ class Record extends Model
     }
 
     /**
-     * Зберегти зміну полів новою версією з перевіркою версії запису (ТЗ 5, 7, 8.4).
+     * Зберегти зміну полів новою версією з перевіркою версії документа (ТЗ 5, 7, 8.4).
      * Кидає StaleRecordException, якщо хтось інший уже зберіг зміни.
      */
     public function applyChanges(array $data, VersionSource $source, ?User $user, ?int $expectedLock = null, ?string $comment = null, ?int $aiCheckId = null): ?RecordVersion
@@ -217,7 +217,7 @@ class Record extends Model
                 throw new StaleRecordException($fresh);
             }
             if ($fresh->openRemarks()->exists()) {
-                throw new \DomainException('Спочатку закрийте всі зауваження до запису.');
+                throw new \DomainException('Спочатку закрийте всі зауваження до документа.');
             }
             if (AiCheckProposal::where('record_id', $fresh->id)->where('decision', 'pending')->exists()) {
                 throw new \DomainException('Є AI-пропозиції без рішення: прийміть або відхиліть їх.');
@@ -238,7 +238,7 @@ class Record extends Model
         $this->book->refreshCounters();
     }
 
-    /** Чи готовий запис до експорту в реєстр (ТЗ 9). */
+    /** Чи готовий документ до експорту в реєстр (ТЗ 9). */
     public function isExportReady(): bool
     {
         $a = $this->currentAdaptation;

@@ -14,7 +14,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
-/** Сформовані файли обміну зі складом і версіями записів (ТЗ 11). */
+/** Сформовані файли обміну зі складом і версіями документів (ТЗ 11). */
 class ExportResource extends Resource
 {
     use Access;
@@ -56,9 +56,9 @@ class ExportResource extends Resource
             TextColumn::make('created_at')->label('Створено')->dateTime('d.m.Y H:i')->sortable(),
             TextColumn::make('format')->label('Формат')->badge(),
             TextColumn::make('status')->label('Стан')->badge(),
-            TextColumn::make('records_count')->label('Записів')->alignEnd(),
+            TextColumn::make('records_count')->label('Документів')->alignEnd(),
             TextColumn::make('filters')->label('Склад')->state(fn (Export $e) => ! empty($e->filters['ids']) ? 'Вибрані: '.count($e->filters['ids'])
-                : (collect($e->filters)->filter()->keys()->implode(', ') ?: 'Усі доступні записи'))->wrap()->size('xs'),
+                : (collect($e->filters)->filter()->keys()->implode(', ') ?: 'Усі доступні документи'))->wrap()->size('xs'),
             TextColumn::make('user.name')->label('Користувач'),
             TextColumn::make('file_size')->label('Розмір')->formatStateUsing(fn ($state) => $state ? number_format($state / 1024, 0).' КБ' : '—')->alignEnd(),
             TextColumn::make('error')->label('Помилка')->color('danger')->wrap()->placeholder('—'),
@@ -67,7 +67,7 @@ class ExportResource extends Resource
                 Action::make('download')->label('Завантажити')->icon('heroicon-o-arrow-down-tray')
                     ->visible(fn (Export $e) => $e->file_path)->url(fn (Export $e) => route('exports.download', $e)),
                 Action::make('items')->label('Склад')->icon('heroicon-o-list-bullet')->color('gray')
-                    ->modalHeading('Склад і версії експортованих записів')->modalSubmitAction(false)->modalCancelActionLabel('Закрити')
+                    ->modalHeading('Склад і версії експортованих документів')->modalSubmitAction(false)->modalCancelActionLabel('Закрити')
                     ->modalContent(fn (Export $e) => view('filament.exports.items', ['items' => $e->items()->with('record')->limit(500)->get(), 'total' => $e->records_count])),
             ]);
     }

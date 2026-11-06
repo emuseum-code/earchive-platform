@@ -24,9 +24,9 @@ class OverviewStats extends StatsOverviewWidget
         $pct = fn ($a, $t) => $t ? round($a * 100 / $t).'%' : '0%';
 
         $stats = [
-            Stat::make('Музеїв', Museum::visibleTo($u)->count())->description(number_format($b->c, 0, ',', ' ').' книг')->icon('heroicon-o-building-library'),
+            Stat::make('Архівів', Museum::visibleTo($u)->count())->description(number_format($b->c, 0, ',', ' ').' справ')->icon('heroicon-o-building-library'),
             Stat::make('Сканів', number_format($b->s, 0, ',', ' '))->description($pct($b->r, $b->s - $b->m).' розпізнано')->icon('heroicon-o-photo'),
-            Stat::make('Записів', number_format($b->rc, 0, ',', ' '))
+            Stat::make('Документів', number_format($b->rc, 0, ',', ' '))
                 ->description(number_format($b->rv, 0, ',', ' ').' перевірено · '.(clone $records)->where('verification_status', 'needs_clarification')->count().' на уточненні')
                 ->icon('heroicon-o-table-cells'),
             Stat::make('Адаптовано до РМФУ', number_format($b->ra, 0, ',', ' '))

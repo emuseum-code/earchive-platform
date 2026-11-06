@@ -17,7 +17,7 @@ use App\Support\Settings;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Адаптація перевіреного запису до схеми музейного реєстру (ТЗ 9): таблиця відповідностей,
+ * Адаптація перевіреного документа до схеми архівного опису (ТЗ 9): таблиця відповідностей,
  * нормалізація дат, чисел і розмірів, довідники, змістовий розбір Gemini AI, програмна валідація.
  */
 class AdaptationService
@@ -28,7 +28,7 @@ class AdaptationService
     {
         $schema ??= RegistrySchema::active() ?? throw new \RuntimeException('Не налаштовано активну схему реєстру.');
         if ($record->verification_status !== VerificationStatus::Verified) {
-            throw new \DomainException('Адаптувати можна лише перевірений запис.');
+            throw new \DomainException('Адаптувати можна лише перевірений документ.');
         }
         $record->update(['adaptation_status' => AdaptationStatus::Processing]);
         $rules = $schema->rules()->where('is_active', true)->get();
@@ -112,11 +112,11 @@ class AdaptationService
         });
     }
 
-    /** Підтвердження адаптації верифікатором: лише без помилок і для актуальної версії запису. */
+    /** Підтвердження адаптації верифікатором: лише без помилок і для актуальної версії документа. */
     public function confirm(Adaptation $a, User $user): void
     {
         if ($a->isStale()) {
-            throw new \DomainException('Адаптація неактуальна: джерельний запис змінився. Запустіть адаптацію повторно.');
+            throw new \DomainException('Адаптація неактуальна: джерельний документ змінився. Запустіть адаптацію повторно.');
         }
         if ($a->errors_count > 0) {
             throw new \DomainException('Виправте обов’язкові поля та помилки формату ('.$a->errors_count.').');
@@ -252,7 +252,7 @@ class AdaptationService
         return [collect($nums)->map(fn ($n, $i) => $codes[$i].' '.$n.' '.$unit)->implode('; '), null];
     }
 
-    /** Один запит Gemini AI на всі змістові поля запису. */
+    /** Один запит Gemini AI на всі змістові поля документа. */
     private function aiFields(Record $record, RegistrySchema $schema, $rules, array $src, ?ProcessingJob $job): array
     {
         $fields = $schema->fields->keyBy('key');
@@ -275,10 +275,10 @@ class AdaptationService
 
             return sprintf('- %s: %s. %s%s', $r->target_field, $f?->label ?? $r->target_field, $r->comment ?? AdaptationRule::TRANSFORMS[$r->transform] ?? '', $dict);
         })->implode("\n");
-        $prompt = "Адаптуй запис старої музейної інвентарної книги до полів Реєстру музейного фонду України.\n"
-            ."Мова реєстру — українська (поля *_uk), англійська (*_en), латиниця (*_la). Не вигадуй даних, яких немає в записі; "
+        $prompt = "Адаптуй документ старої архівної справи до полів Реєстру архівного фонду України.\n"
+            ."Мова реєстру — українська (поля *_uk), англійська (*_en), латиниця (*_la). Не вигадуй даних, яких немає в документі; "
             ."якщо значення не можна визначити — поверни null і поясни в issues.\n\nПоля:\n".$spec
-            ."\n\nЗапис книги:\n".json_encode($src, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            ."\n\nЗапис справи:\n".json_encode($src, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         $schemaJson = [
             'type' => 'OBJECT',
             'properties' => [

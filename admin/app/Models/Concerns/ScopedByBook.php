@@ -5,7 +5,7 @@ namespace App\Models\Concerns;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
-/** Обмеження вибірки книгами, доступними користувачу (ТЗ 5; права перевіряються сервером). */
+/** Обмеження вибірки справами, доступними користувачу (ТЗ 5; права перевіряються сервером). */
 trait ScopedByBook
 {
     public function scopeVisibleTo(Builder $q, ?User $user): Builder

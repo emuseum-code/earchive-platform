@@ -108,7 +108,7 @@ class SyncRunResource extends Resource
                 TextEntry::make('status')->label('Стан')->badge(),
                 TextEntry::make('user.name')->label('Запустив')->placeholder(fn (SyncRun $r) => $r->scheduled ? 'За розкладом' : '—'),
                 TextEntry::make('files_found')->label('Знайдено JPG'),
-                TextEntry::make('new_books')->label('Нових книг'),
+                TextEntry::make('new_books')->label('Нових справ'),
                 TextEntry::make('new_scans')->label('Нових сканів'),
                 TextEntry::make('changed_scans')->label('Змінених'),
                 TextEntry::make('missing_scans')->label('Недоступних')->color(fn ($state) => $state ? 'danger' : null),

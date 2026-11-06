@@ -13,7 +13,7 @@ use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 
-/** Записи одного музею (вибір музею — сторінка RecordMuseums), згруповані за книгами. */
+/** Документи одного архіву (вибір архіву — сторінка RecordMuseums), згруповані за справами. */
 class ListRecordRows extends ListRecords
 {
     protected static string $resource = RecordResource::class;
@@ -21,7 +21,7 @@ class ListRecordRows extends ListRecords
     public function mount(): void
     {
         parent::mount();
-        // без музею, книги чи пошуку таблиця не показує все в купу, а веде до вибору музею
+        // без архіву, справи чи пошуку таблиця не показує все в купу, а веде до вибору архіву
         if (! $this->museumId() && blank($this->tableFilters['book_id']['value'] ?? null) && blank($this->tableSearch ?? null)) {
             $this->redirect(RecordMuseums::getUrl());
         }
@@ -36,18 +36,18 @@ class ListRecordRows extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return Museum::find($this->museumId())?->name ?? 'Єдина таблиця записів';
+        return Museum::find($this->museumId())?->name ?? 'Єдина таблиця документів';
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return $this->museumId() ? 'Єдина таблиця записів · за книгами' : null;
+        return $this->museumId() ? 'Єдина таблиця документів · за справами' : null;
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('museums')->label('Усі музеї')->icon('heroicon-o-arrow-left')->color('gray')->url(RecordMuseums::getUrl()),
+            Action::make('museums')->label('Усі архіви')->icon('heroicon-o-arrow-left')->color('gray')->url(RecordMuseums::getUrl()),
         ];
     }
 

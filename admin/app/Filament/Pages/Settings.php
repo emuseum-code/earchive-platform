@@ -72,7 +72,7 @@ class Settings extends Page
                 ]),
             ]),
             Tab::make('Правила папок')->icon('heroicon-o-folder')->schema([
-                Placeholder::make('rules_hint')->hiddenLabel()->content('Глибина рахується від кореневої директорії з нуля. Шаблон назви (регулярний вираз) має пріоритет над глибиною. Папка з JPG завжди вважається книгою.'),
+                Placeholder::make('rules_hint')->hiddenLabel()->content('Глибина рахується від кореневої директорії з нуля. Шаблон назви (регулярний вираз) має пріоритет над глибиною. Папка з JPG завжди вважається справою.'),
                 Repeater::make('rules')->hiddenLabel()->columns(5)->reorderable(false)->schema([
                     TextInput::make('depth')->label('Глибина')->numeric(),
                     TextInput::make('pattern')->label('Шаблон назви'),

@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** Рядок таблиці відповідностей поле книги → поле реєстру (ТЗ 9). */
+/** Рядок таблиці відповідностей поле справи → поле реєстру (ТЗ 9). */
 class AdaptationRule extends Model
 {
     public const TRANSFORMS = [

@@ -14,7 +14,7 @@
     $long = ['title', 'description', 'acquisition_source', 'provenance', 'notes', 'material', 'location'];
 @endphp
 <x-filament-panels::page>
-{{-- Гарячі клавіші звірки: Ctrl/⌘+S — зберегти правки, Ctrl/⌘+Enter — підтвердити, Alt+PgDn/PgUp — наступний/попередній запис --}}
+{{-- Гарячі клавіші звірки: Ctrl/⌘+S — зберегти правки, Ctrl/⌘+Enter — підтвердити, Alt+PgDn/PgUp — наступний/попередній документ --}}
 <div class="bk-review" @if ($running) wire:poll.2s="pollAi" @endif
      x-data="{
         {{-- Олівець: виділений у полі текст іде в зауваження, лише коли форма відкрита саме для цього поля --}}
@@ -33,12 +33,12 @@
             @if (count($this->scansList))
                 <x-scan-viewer :scans="$this->scansList" :selectable="$canEdit" height="calc(100vh - 18rem)" />
             @else
-                <p class="bk-muted">Запис не пов’язаний зі сканами.</p>
+                <p class="bk-muted">Документ не пов’язаний зі сканами.</p>
             @endif
         </div>
     </section>
 
-    {{-- Права панель: розпізнаний запис --}}
+    {{-- Права панель: розпізнаний документ --}}
     <section class="bk-review__right">
         <div class="bk-review__top">
             <div class="bk-status-row">
@@ -49,12 +49,12 @@
                 @if ($record->possible_duplicate)<span class="bk-badge bk-badge--warning">Можливий дублікат</span>@endif
             </div>
             <div class="bk-nav">
-                <button type="button" class="bk-btn" wire:click="go(-1)" title="Попередній запис">‹ Попередній</button>
-                <select class="bk-select" wire:model.live="nav" title="Перехід між записами книги">
+                <button type="button" class="bk-btn" wire:click="go(-1)" title="Попередній документ">‹ Попередній</button>
+                <select class="bk-select" wire:model.live="nav" title="Перехід між документами справи">
                     <option value="unchecked">Неперевірені</option>
-                    <option value="all">Усі записи</option>
+                    <option value="all">Усі документи</option>
                 </select>
-                <button type="button" class="bk-btn" wire:click="go(1)" title="Наступний запис">Наступний ›</button>
+                <button type="button" class="bk-btn" wire:click="go(1)" title="Наступний документ">Наступний ›</button>
             </div>
         </div>
 
@@ -78,7 +78,7 @@
                     @if ($openRemarks->count())
                         Буде перевірено {{ $openRemarks->count() }} {{ trans_choice('зауваження|зауваження|зауважень', $openRemarks->count()) }} з урахуванням сканів
                     @else
-                        Зауважень немає — AI перевірить увесь запис
+                        Зауважень немає — AI перевірить увесь документ
                     @endif
                 </span>
             </div>
@@ -181,7 +181,7 @@
             </div>
         @endif
 
-        {{-- Поля запису --}}
+        {{-- Поля документа --}}
         <div class="bk-card">
             @foreach ($groups as $group => $fields)
                 <h4 class="bk-group">{{ $group }}</h4>
@@ -227,7 +227,7 @@
                 @endforeach
             @endforeach
             @if ($record->extra_fields)
-                <h4 class="bk-group">Додаткові поля з книги</h4>
+                <h4 class="bk-group">Додаткові поля з справи</h4>
                 <dl class="bk-extra">
                     @foreach ($record->extra_fields as $label => $value)<dt>{{ $label }}</dt><dd>{{ is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : $value }}</dd>@endforeach
                 </dl>
@@ -237,7 +237,7 @@
         {{-- Структурні зауваження (ТЗ 8.2) --}}
         @if ($canEdit)
             <div class="bk-card">
-                <h4 class="bk-group">Помилки структури записів</h4>
+                <h4 class="bk-group">Помилки структури документів</h4>
                 <div class="bk-actions bk-actions--wrap">
                     @foreach (['missing_record', 'extra_record', 'wrong_merge', 'wrong_split', 'continuation', 'other'] as $t)
                         <button type="button" class="bk-btn" wire:click="openRemark('{{ $t }}')">{{ \App\Enums\RemarkType::from($t)->getLabel() }}</button>
@@ -290,7 +290,7 @@
                 @if ($openRemarks->count() || $proposals->count())
                     <span class="bk-muted">Відкритих зауважень: {{ $openRemarks->count() }}, пропозицій без рішення: {{ $proposals->count() }}</span>
                 @endif
-                <span class="bk-muted bk-kbd-hint"><kbd>Ctrl</kbd>+<kbd>S</kbd> зберегти · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> підтвердити · <kbd>Alt</kbd>+<kbd>PgDn</kbd> наступний запис</span>
+                <span class="bk-muted bk-kbd-hint"><kbd>Ctrl</kbd>+<kbd>S</kbd> зберегти · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> підтвердити · <kbd>Alt</kbd>+<kbd>PgDn</kbd> наступний документ</span>
             </div>
         @endif
     </section>

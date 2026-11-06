@@ -9,7 +9,7 @@ use App\Models\Territory;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 
-/** Дерево територія → музей → фонд → книга з поступовим довантаженням (ТЗ 4.1, 12). */
+/** Дерево територія → архів → фонд → справа з поступовим довантаженням (ТЗ 4.1, 12). */
 class Tree extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleGroup;

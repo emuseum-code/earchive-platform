@@ -25,8 +25,8 @@ class ItemsRelationManager extends RelationManager
             TextInput::make('value_en')->label('Англійською')->columnSpanFull(),
             TextInput::make('code')->label('ID у реєстрі'),
             TextInput::make('sort')->label('Порядок')->numeric()->default(0),
-            TagsInput::make('synonyms')->label('Як записано в книгах')->columnSpanFull()
-                ->helperText('Варіанти з книг, які зіставляються з цим значенням: «хорошее», «удовлетворит.» …'),
+            TagsInput::make('synonyms')->label('Як записано в справах')->columnSpanFull()
+                ->helperText('Варіанти з справ, які зіставляються з цим значенням: «хорошее», «удовлетворит.» …'),
         ]);
     }
 
@@ -38,7 +38,7 @@ class ItemsRelationManager extends RelationManager
             TextColumn::make('parent.value')->label('Батьківський термін')->color('gray'),
             TextColumn::make('value_en')->label('EN')->toggleable(isToggledHiddenByDefault: true),
             TextColumn::make('code')->label('ID у реєстрі')->searchable(),
-            TextColumn::make('synonyms')->label('Синоніми з книг')->badge()->color('gray'),
+            TextColumn::make('synonyms')->label('Синоніми з справ')->badge()->color('gray'),
         ])->headerActions([CreateAction::make()])->recordActions([EditAction::make(), DeleteAction::make()]);
     }
 }

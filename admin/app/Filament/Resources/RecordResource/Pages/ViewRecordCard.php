@@ -7,7 +7,7 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
-/** Картка запису: значення, джерельні сторінки, історія змін, зауваження, адаптація (ТЗ 7). */
+/** Картка документа: значення, джерельні сторінки, історія змін, зауваження, адаптація (ТЗ 7). */
 class ViewRecordCard extends ViewRecord
 {
     protected static string $resource = RecordResource::class;
@@ -16,7 +16,7 @@ class ViewRecordCard extends ViewRecord
 
     public function getTitle(): string
     {
-        return 'Запис № '.($this->record->record_no ?: $this->record->id);
+        return 'Документ № '.($this->record->record_no ?: $this->record->id);
     }
 
     public function getSubheading(): ?string

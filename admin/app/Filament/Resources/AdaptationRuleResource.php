@@ -24,7 +24,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
-/** Таблиця відповідностей поле книги → поле реєстру (ТЗ 9). Кожна зміна правила — нова версія. */
+/** Таблиця відповідностей поле справи → поле реєстру (ТЗ 9). Кожна зміна правила — нова версія. */
 class AdaptationRuleResource extends Resource
 {
     use Access;
@@ -60,7 +60,7 @@ class AdaptationRuleResource extends Resource
                 ->default(fn () => RegistrySchema::active()?->id),
             Select::make('target_field')->label('Поле реєстру')->required()->searchable()
                 ->options(fn (Get $get) => RegistryField::where('registry_schema_id', $get('registry_schema_id'))->orderBy('sort')->pluck('label', 'key')),
-            Select::make('source_fields')->label('Поля книги')->multiple()->options(self::sourceOptions()),
+            Select::make('source_fields')->label('Поля справи')->multiple()->options(self::sourceOptions()),
             Select::make('transform')->label('Перетворення')->options(AdaptationRule::TRANSFORMS)->required()->default('copy'),
             KeyValue::make('params')->label('Параметри')->keyLabel('Параметр')->valueLabel('Значення')
                 ->helperText('dictionary: код довідника; pattern: регулярний вираз; value: стала')->columnSpanFull(),
@@ -76,7 +76,7 @@ class AdaptationRuleResource extends Resource
 
         return $table->defaultSort('sort')->reorderable('sort')->paginated([50, 100])->columns([
             TextColumn::make('target_field')->label('Поле реєстру')->formatStateUsing(fn ($state) => $labels()[$state] ?? $state)->wrap()->weight('medium'),
-            TextColumn::make('source_fields')->label('Поля книги')->formatStateUsing(fn ($state) => Record::label($state))->badge()->color('gray'),
+            TextColumn::make('source_fields')->label('Поля справи')->formatStateUsing(fn ($state) => Record::label($state))->badge()->color('gray'),
             TextColumn::make('transform')->label('Перетворення')->formatStateUsing(fn ($state) => AdaptationRule::TRANSFORMS[$state] ?? $state)->wrap(),
             IconColumn::make('use_ai')->label('AI')->boolean()->trueIcon('heroicon-o-sparkles'),
             TextColumn::make('version')->label('Версія')->alignEnd(),

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Облік і синхронізація: дерево територія → музей → фонд → книга → скани (ТЗ 4). */
+/** Облік і синхронізація: дерево територія → архів → фонд → справа → скани (ТЗ 4). */
 return new class extends Migration
 {
     public function up(): void
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('short_name')->nullable();
             $table->string('edrpou', 12)->nullable();
-            $table->string('rmfu_id')->nullable()->comment('Ідентифікатор музею в РМФУ');
+            $table->string('rmfu_id')->nullable()->comment('Ідентифікатор архіву в РМФУ');
             $table->string('folder_path', 1024)->nullable()->unique();
             $table->string('contact_person')->nullable();
             $table->string('contact_email')->nullable();
@@ -48,7 +48,7 @@ return new class extends Migration
             $table->unsignedInteger('version')->default(1);
             $table->boolean('is_active')->default(true);
             $table->text('description')->nullable();
-            // графи книги: [{key, label, column_no, maps_to}] — те, що не мапиться, йде в extra_fields
+            // графи справи: [{key, label, column_no, maps_to}] — те, що не мапиться, йде в extra_fields
             $table->json('columns');
             $table->longText('prompt');
             $table->json('response_schema')->nullable();
@@ -65,7 +65,7 @@ return new class extends Migration
             $table->string('title');
             $table->string('book_type', 20)->default('mixed');
             $table->string('book_number', 50)->nullable();
-            $table->string('years', 50)->nullable()->comment('Роки ведення книги');
+            $table->string('years', 50)->nullable()->comment('Роки ведення справи');
             $table->string('language', 30)->nullable();
             $table->string('folder_path', 1024)->nullable()->unique();
             $table->unsignedInteger('expected_pages')->nullable()->comment('Очікувана кількість сторінок, якщо відома');
@@ -91,7 +91,7 @@ return new class extends Migration
             $table->string('path', 1024)->unique()->comment('Шлях відносно кореневої директорії');
             $table->string('filename');
             $table->unsignedInteger('page_order')->default(0);
-            $table->string('page_label', 50)->nullable()->comment('Аркуш / розворот з книги');
+            $table->string('page_label', 50)->nullable()->comment('Аркуш / розворот з справи');
             $table->unsignedBigInteger('file_size')->nullable();
             $table->timestamp('file_mtime')->nullable();
             $table->string('checksum', 64)->nullable();
@@ -155,7 +155,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // Межі доступу користувачів (ТЗ 5): музеї цілком або окремі книги
+        // Межі доступу користувачів (ТЗ 5): архіви цілком або окремі справи
         Schema::create('museum_user', function (Blueprint $table) {
             $table->foreignId('museum_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();

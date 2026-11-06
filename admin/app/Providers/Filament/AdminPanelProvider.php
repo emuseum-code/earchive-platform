@@ -30,7 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->profile(isSimple: false)
-            ->brandName('eBooks: Облік інвентарних книг')
+            ->brandName('eBooks: Архів: розпізнавання архівних документів')
             ->favicon(asset('favicon.svg'))
             ->colors(['primary' => Color::Indigo, 'gray' => Color::Slate, 'ai' => Color::Blue])
             ->defaultAvatarProvider(\App\Filament\LocalAvatarProvider::class)

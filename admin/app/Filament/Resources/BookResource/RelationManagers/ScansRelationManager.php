@@ -20,7 +20,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
-/** Сторінки книги з порядком, статусами й запуском розпізнавання (ТЗ 4.1, 4.3, 6.1). */
+/** Сторінки справи з порядком, статусами й запуском розпізнавання (ТЗ 4.1, 4.3, 6.1). */
 class ScansRelationManager extends RelationManager
 {
     protected static string $relationship = 'scans';
@@ -50,7 +50,7 @@ class ScansRelationManager extends RelationManager
                 TextColumn::make('file_status')->label('Файл')->badge(),
                 TextColumn::make('recognition_status')->label('Розпізнавання')->badge()
                     ->description(fn (Scan $s) => $s->needs_recheck ? 'Скан змінився — потрібна перевірка' : ($s->error ? mb_strimwidth($s->error, 0, 80, '…') : null)),
-                TextColumn::make('records_count')->label('Записів')->counts('records')->alignEnd(),
+                TextColumn::make('records_count')->label('Документів')->counts('records')->alignEnd(),
                 TextColumn::make('file_size')->label('Розмір')->formatStateUsing(fn ($state) => $state ? number_format($state / 1048576, 1).' МБ' : '—')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('dims')->label('Пікселі')->state(fn (Scan $s) => $s->width ? $s->width.'×'.$s->height : '—')->toggleable(isToggledHiddenByDefault: true),

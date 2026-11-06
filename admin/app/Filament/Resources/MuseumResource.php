@@ -21,7 +21,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
-/** Музеї (рівень дерева, ТЗ 4.1). */
+/** Архіви (рівень дерева, ТЗ 4.1). */
 class MuseumResource extends Resource
 {
     use Access;
@@ -39,9 +39,9 @@ class MuseumResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Облік сканів';
 
-    protected static ?string $modelLabel = 'музей';
+    protected static ?string $modelLabel = 'архів';
 
-    protected static ?string $pluralModelLabel = 'Музеї';
+    protected static ?string $pluralModelLabel = 'Архіви';
 
     protected static ?int $navigationSort = 2;
 
@@ -55,7 +55,7 @@ class MuseumResource extends Resource
     {
         return $schema->components([
             Section::make()->columnSpanFull()->schema([Grid::make(3)->schema([
-                TextInput::make('name')->label('Назва музею')->required()->columnSpan(2),
+                TextInput::make('name')->label('Назва архіву')->required()->columnSpan(2),
                 TextInput::make('short_name')->label('Скорочена назва'),
                 Select::make('territory_id')->label('Територія')->relationship('territory', 'name')->searchable()->preload()
                     ->createOptionForm([TextInput::make('name')->label('Назва')->required()]),
@@ -74,22 +74,22 @@ class MuseumResource extends Resource
         return $table
             ->defaultSort('name')
             ->columns([
-                TextColumn::make('name')->label('Музей')->searchable()->sortable()->weight('medium')->wrap(),
+                TextColumn::make('name')->label('Архів')->searchable()->sortable()->weight('medium')->wrap(),
                 TextColumn::make('territory.name')->label('Територія')->sortable()->toggleable(),
-                TextColumn::make('books_count')->label('Книг')->sortable()->alignEnd(),
+                TextColumn::make('books_count')->label('Справ')->sortable()->alignEnd(),
                 TextColumn::make('books_sum_scans_count')->label('Сканів')->numeric()->alignEnd(),
-                TextColumn::make('books_sum_records_count')->label('Записів')->numeric()->alignEnd(),
+                TextColumn::make('books_sum_records_count')->label('Документів')->numeric()->alignEnd(),
                 TextColumn::make('books_sum_records_verified')->label('Перевірено')->numeric()->alignEnd(),
                 TextColumn::make('folder_path')->label('Папка')->toggleable(isToggledHiddenByDefault: true)->fontFamily('mono')->size('xs'),
             ])
             ->filters([SelectFilter::make('territory_id')->label('Територія')->relationship('territory', 'name')])
             ->recordUrl(fn (Museum $r) => \App\Filament\Pages\MuseumDesk::getUrl(['museum' => $r->id]))
             ->recordActions([
-                // ТЗ 6.1: запуск розпізнавання для цілого музею (нові, помилкові й змінені сторінки всіх його книг)
-                \App\Filament\Support\Ai::button(Action::make('recognize')->label('Розпізнати книги'))
+                // ТЗ 6.1: запуск розпізнавання для цілого архіву (нові, помилкові й змінені сторінки всіх його справ)
+                \App\Filament\Support\Ai::button(Action::make('recognize')->label('Розпізнати справи'))
                     ->visible(fn () => auth()->user()->canOperate())
-                    ->requiresConfirmation()->modalHeading(fn (Museum $record) => 'Розпізнати всі книги: '.$record->name)
-                    ->modalDescription('У чергу підуть нерозпізнані, помилкові та змінені сторінки всіх доступних вам книг музею. Уже розпізнані сторінки не повторюються.')
+                    ->requiresConfirmation()->modalHeading(fn (Museum $record) => 'Розпізнати всі справи: '.$record->name)
+                    ->modalDescription('У чергу підуть нерозпізнані, помилкові та змінені сторінки всіх доступних вам справ архіву. Уже розпізнані сторінки не повторюються.')
                     ->action(fn (Museum $record) => BookResource::recognize(\App\Models\Book::visibleTo(auth()->user())->where('museum_id', $record->id)->get())),
                 EditAction::make()->label(''),
             ]);

@@ -15,7 +15,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
-/** Адаптовані записи у форматі реєстру з помилками та неоднозначностями (ТЗ 9). */
+/** Адаптовані документи у форматі реєстру з помилками та неоднозначностями (ТЗ 9). */
 class AdaptationResource extends Resource
 {
     use Access;
@@ -62,18 +62,18 @@ class AdaptationResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->defaultSort('updated_at', 'desc')->columns([
-            TextColumn::make('record.record_no')->label('Запис №')->searchable(),
+            TextColumn::make('record.record_no')->label('Документ №')->searchable(),
             TextColumn::make('values.name_uk')->label('Назва (реєстр)')->wrap()->lineClamp(2),
             TextColumn::make('values.num_inventory')->label('Інв. номер'),
-            TextColumn::make('record.book.title')->label('Книга')->wrap()->size('xs'),
+            TextColumn::make('record.book.title')->label('Справа')->wrap()->size('xs'),
             TextColumn::make('status')->label('Стан')->badge(),
             TextColumn::make('errors_count')->label('Помилок')->alignEnd()->color(fn ($state) => $state ? 'danger' : null),
             TextColumn::make('warnings_count')->label('Неоднозн.')->alignEnd()->color(fn ($state) => $state ? 'warning' : null),
-            TextColumn::make('version')->label('Версія')->formatStateUsing(fn ($state, Adaptation $a) => 'v'.$state.' ← запис v'.$a->source_record_version)->size('xs'),
+            TextColumn::make('version')->label('Версія')->formatStateUsing(fn ($state, Adaptation $a) => 'v'.$state.' ← документ v'.$a->source_record_version)->size('xs'),
             TextColumn::make('updated_at')->label('Змінено')->since()->sortable(),
         ])->filters([
             SelectFilter::make('status')->label('Стан')->options(AdaptationStatus::options())->multiple(),
-            SelectFilter::make('book')->label('Книга')->options(fn () => Book::visibleTo(auth()->user())->pluck('title', 'id'))
+            SelectFilter::make('book')->label('Справа')->options(fn () => Book::visibleTo(auth()->user())->pluck('title', 'id'))
                 ->query(fn ($query, $data) => $query->when($data['value'] ?? null, fn ($q, $v) => $q->whereHas('record', fn ($r) => $r->where('book_id', $v)))),
         ])->recordActions([ViewAction::make()->label('Відкрити')]);
     }

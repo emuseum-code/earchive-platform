@@ -15,7 +15,7 @@ class ListExports extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('registry')->label('Експорт готових записів у РМФУ')->icon('heroicon-o-arrow-up-tray')
+            Action::make('registry')->label('Експорт готових документів у РМФУ')->icon('heroicon-o-arrow-up-tray')
                 ->schema([Select::make('format')->label('Формат')->options(RecordResource::exportFormats())->default('registry')->required()])
                 ->action(fn (array $data) => RecordResource::startExport($data['format'], $data['format'] === 'registry' ? ['export_status' => ['ready']] : [])),
         ];

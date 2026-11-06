@@ -7,17 +7,17 @@ use App\Filament\Widgets\OverviewStats;
 use App\Filament\Widgets\QueueStats;
 use Filament\Pages\Dashboard as BaseDashboard;
 
-/** Огляд: музеї, книги, скани, записи, черга та помилки (ТЗ 10). */
+/** Огляд: архіви, справи, скани, документи, черга та помилки (ТЗ 10). */
 class Dashboard extends BaseDashboard
 {
     protected static ?string $title = 'Огляд';
 
-    /** Швидкі дії на головній: скани в потрібний музей і перехід до роботи з одним музеєм. */
+    /** Швидкі дії на головній: скани в потрібний архів і перехід до роботи з одним архівом. */
     protected function getHeaderActions(): array
     {
         return [
             \App\Filament\Resources\BookResource::uploadAction()->label('Додати скани'),
-            \Filament\Actions\Action::make('museumDesk')->label('Робота з музеєм')->icon('heroicon-o-building-library')->color('gray')
+            \Filament\Actions\Action::make('museumDesk')->label('Робота з архівом')->icon('heroicon-o-building-library')->color('gray')
                 ->url(MuseumDesk::getUrl()),
         ];
     }

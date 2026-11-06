@@ -6,7 +6,7 @@
     @endphp
     <div class="bk-card">
         @if ($list->isEmpty())
-            <p class="bk-muted">У книзі ще немає сканів. Запустіть синхронізацію папки.</p>
+            <p class="bk-muted">У справі ще немає сканів. Запустіть синхронізацію папки.</p>
         @else
             <x-scan-viewer :scans="$list" height="78vh" />
         @endif

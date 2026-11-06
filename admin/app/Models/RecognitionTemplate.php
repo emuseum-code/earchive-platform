@@ -6,7 +6,7 @@ use App\Enums\BookType;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** Шаблон розпізнавання для типу книги (ТЗ 6.2). */
+/** Шаблон розпізнавання для типу справи (ТЗ 6.2). */
 class RecognitionTemplate extends Model
 {
     protected $guarded = ['id'];

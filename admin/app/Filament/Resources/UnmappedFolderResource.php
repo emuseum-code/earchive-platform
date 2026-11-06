@@ -69,8 +69,8 @@ class UnmappedFolderResource extends Resource
             TextColumn::make('path')->label('Папка')->fontFamily('mono')->size('xs')->searchable()->wrap(),
             TextColumn::make('jpg_count')->label('JPG')->alignEnd(),
             TextColumn::make('resolution')->label('Рішення')->badge()->placeholder('Не уточнено'),
-            TextColumn::make('museum.name')->label('Музей')->placeholder('—'),
-            TextColumn::make('book.title')->label('Книга')->placeholder('—')
+            TextColumn::make('museum.name')->label('Архів')->placeholder('—'),
+            TextColumn::make('book.title')->label('Справа')->placeholder('—')
                 ->url(fn (UnmappedFolder $f) => $f->book_id ? BookResource::getUrl('view', ['record' => $f->book_id]) : null),
             TextColumn::make('updated_at')->label('Виявлено')->since(),
         ])->filters([TernaryFilter::make('resolved')->label('Уточнено')->nullable()->attribute('resolution')->default(false)])
@@ -78,10 +78,10 @@ class UnmappedFolderResource extends Resource
                 Action::make('resolve')->label('Уточнити')->icon('heroicon-o-pencil-square')
                     ->schema([
                         Radio::make('resolution')->label('Чим є ця папка')->required()->live()->options([
-                            FolderLevel::Book->value => 'Книга музею',
+                            FolderLevel::Book->value => 'Справа архіву',
                             FolderLevel::Skip->value => 'Не обліковувати (службова, дублікат тощо)',
                         ]),
-                        Select::make('museum_id')->label('Музей')->options(fn () => Museum::orderBy('name')->pluck('name', 'id'))->searchable()
+                        Select::make('museum_id')->label('Архів')->options(fn () => Museum::orderBy('name')->pluck('name', 'id'))->searchable()
                             ->required(fn (Get $get) => $get('resolution') === FolderLevel::Book->value)->visible(fn (Get $get) => $get('resolution') === FolderLevel::Book->value)->live(),
                     ])
                     ->action(function (UnmappedFolder $record, array $data) {
@@ -90,7 +90,7 @@ class UnmappedFolderResource extends Resource
                         if ($record->resolution === FolderLevel::Book) {
                             $run = SyncRun::create(['user_id' => auth()->id(), 'scope_path' => $record->path, 'status' => 'queued']);
                             app(QueueManager::class)->enqueue(JobType::Sync, $run, auth()->user(), priority: 20);
-                            Notification::make()->success()->title('Папку віднесено до музею; синхронізацію запущено')->send();
+                            Notification::make()->success()->title('Папку віднесено до архіву; синхронізацію запущено')->send();
                         }
                     }),
             ]);

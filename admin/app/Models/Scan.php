@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** JPG-сторінка книги. Оригінал ніколи не змінюється (ТЗ 4.3). */
+/** JPG-сторінка справи. Оригінал ніколи не змінюється (ТЗ 4.3). */
 class Scan extends Model
 {
     use HasUid, ScopedByBook;

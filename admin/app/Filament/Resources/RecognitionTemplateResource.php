@@ -26,7 +26,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-/** Шаблони розпізнавання для типів книг (ТЗ 6.2). Зміна промпту чи граф — нова версія. */
+/** Шаблони розпізнавання для типів справ (ТЗ 6.2). Зміна промпту чи граф — нова версія. */
 class RecognitionTemplateResource extends Resource
 {
     use Access;
@@ -55,23 +55,23 @@ class RecognitionTemplateResource extends Resource
         return $schema->components([
             Section::make()->columnSpanFull()->schema([Grid::make(4)->schema([
                 TextInput::make('name')->label('Назва')->required()->columnSpan(2),
-                Select::make('book_type')->label('Тип книги')->options(BookType::options())->required(),
+                Select::make('book_type')->label('Тип справи')->options(BookType::options())->required(),
                 Toggle::make('is_active')->label('Діє')->default(true)->inline(false),
                 Textarea::make('description')->label('Опис')->rows(2)->columnSpanFull(),
             ])]),
-            Section::make('Графи книги')->description('Те, що не зіставлено з полем єдиної таблиці, зберігається в додаткових полях з назвою графи.')
+            Section::make('Графи справи')->description('Те, що не зіставлено з полем єдиної таблиці, зберігається в додаткових полях з назвою графи.')
                 ->columnSpanFull()->schema([
                     Repeater::make('columns')->hiddenLabel()->reorderable()->columns(4)->defaultItems(1)->schema([
                         TextInput::make('column_no')->label('№ графи')->numeric(),
                         TextInput::make('key')->label('Ключ')->required()->alphaDash(),
-                        TextInput::make('label')->label('Назва графи в книзі')->required(),
+                        TextInput::make('label')->label('Назва графи в справі')->required(),
                         Select::make('maps_to')->label('Поле єдиної таблиці')->options(collect(Record::FIELDS)->map(fn ($f) => $f[0]))
                             ->placeholder('Додаткове поле'),
                     ])->itemLabel(fn (array $state) => ($state['column_no'] ?? '').' · '.($state['label'] ?? '')),
                 ]),
             Section::make('Інструкція для Gemini AI')->columnSpanFull()->schema([
                 Textarea::make('prompt')->hiddenLabel()->rows(8)->required()
-                    ->helperText('Загальні правила (дослівно, без вигадок, продовження записів, координати) додаються автоматично.'),
+                    ->helperText('Загальні правила (дослівно, без вигадок, продовження документів, координати) додаються автоматично.'),
             ]),
         ]);
     }
@@ -80,15 +80,15 @@ class RecognitionTemplateResource extends Resource
     {
         return $table->columns([
             TextColumn::make('name')->label('Шаблон')->weight('medium')->description(fn ($record) => $record->description)->wrap(),
-            TextColumn::make('book_type')->label('Тип книги')->badge(),
+            TextColumn::make('book_type')->label('Тип справи')->badge(),
             TextColumn::make('columns')->label('Граф')->state(fn ($record) => count($record->columns ?? []))->alignEnd(),
             TextColumn::make('version')->label('Версія')->alignEnd(),
-            TextColumn::make('books_count')->label('Книг')->counts('books')->alignEnd(),
+            TextColumn::make('books_count')->label('Справ')->counts('books')->alignEnd(),
             IconColumn::make('is_active')->label('Діє')->boolean(),
             TextColumn::make('updated_at')->label('Змінено')->since(),
         ])->recordActions([
             Action::make('test')->label('Тест')->icon('heroicon-o-play')->color('gray')
-                ->modalHeading('Тестове розпізнавання')->modalDescription('Сторінку буде поставлено в чергу з цим шаблоном. Результат з’явиться в книзі.')
+                ->modalHeading('Тестове розпізнавання')->modalDescription('Сторінку буде поставлено в чергу з цим шаблоном. Результат з’явиться в справі.')
                 ->schema([Select::make('scan_id')->label('Скан')->required()->searchable()
                     ->getSearchResultsUsing(fn (string $s) => Scan::visibleTo(auth()->user())->where('path', 'like', "%{$s}%")->limit(30)->pluck('path', 'id'))
                     ->getOptionLabelUsing(fn ($v) => Scan::find($v)?->path)])

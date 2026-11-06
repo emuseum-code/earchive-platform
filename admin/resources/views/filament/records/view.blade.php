@@ -26,14 +26,14 @@
                 </dl>
             @endforeach
             @if ($r->extra_fields)
-                <h4 class="bk-group">Додаткові поля з книги</h4>
+                <h4 class="bk-group">Додаткові поля з справи</h4>
                 <dl class="bk-dl">@foreach ($r->extra_fields as $k => $v)<dt>{{ $k }}</dt><dd>{{ is_array($v) ? json_encode($v, JSON_UNESCAPED_UNICODE) : $v }}</dd>@endforeach</dl>
             @endif
             <h4 class="bk-group">Належність і джерело</h4>
             <dl class="bk-dl">
-                <dt>Музей</dt><dd>{{ $r->museum?->name }}</dd>
+                <dt>Архів</dt><dd>{{ $r->museum?->name }}</dd>
                 <dt>Фонд</dt><dd>{{ $r->fund?->name ?? '—' }}</dd>
-                <dt>Книга</dt><dd><a class="bk-link" href="{{ \App\Filament\Resources\BookResource::getUrl('view', ['record' => $r->book_id]) }}">{{ $r->book?->title }}</a></dd>
+                <dt>Справа</dt><dd><a class="bk-link" href="{{ \App\Filament\Resources\BookResource::getUrl('view', ['record' => $r->book_id]) }}">{{ $r->book?->title }}</a></dd>
                 <dt>Сторінки</dt>
                 <dd>@foreach ($r->scans as $s)<a class="bk-link" href="{{ \App\Filament\Resources\BookResource::getUrl('pages', ['record' => $r->book_id, 'scan' => $s->id]) }}">{{ $s->page_label ?: $s->filename }}</a>@if ($s->pivot->is_continuation) <span class="bk-muted">(продовження)</span>@endif @if (! $loop->last), @endif @endforeach</dd>
                 <dt>Ідентифікатор</dt><dd class="bk-mono">{{ $r->uid }}</dd>
@@ -46,7 +46,7 @@
                     <h3>Адаптація до реєстру · v{{ $a->version }}</h3>
                     <a class="bk-link" href="{{ \App\Filament\Resources\AdaptationResource::getUrl('view', ['record' => $a]) }}">Відкрити</a>
                 </div>
-                <p class="bk-muted">{{ $a->status->getLabel() }} · з версії запису {{ $a->source_record_version }} · правила v{{ $a->rules_version }} · схема {{ $a->schema?->name }} {{ $a->schema?->version }}</p>
+                <p class="bk-muted">{{ $a->status->getLabel() }} · з версії документа {{ $a->source_record_version }} · правила v{{ $a->rules_version }} · схема {{ $a->schema?->name }} {{ $a->schema?->version }}</p>
             </div>
         @endif
     </div>
@@ -68,7 +68,7 @@
             <h3>AI-перевірки</h3>
             @forelse ($r->aiChecks as $c)
                 <div class="bk-history">
-                    <div><span class="bk-badge bk-badge--{{ $c->status->getColor() }}">{{ $c->status->getLabel() }}</span> <span class="bk-muted">{{ $c->model }} · {{ \App\Support\Tz::fmt($c->created_at, 'd.m.Y H:i') }} · {{ $c->whole_record ? 'увесь запис' : 'зауважень: '.count($c->remark_ids ?? []) }}</span></div>
+                    <div><span class="bk-badge bk-badge--{{ $c->status->getColor() }}">{{ $c->status->getLabel() }}</span> <span class="bk-muted">{{ $c->model }} · {{ \App\Support\Tz::fmt($c->created_at, 'd.m.Y H:i') }} · {{ $c->whole_record ? 'увесь документ' : 'зауважень: '.count($c->remark_ids ?? []) }}</span></div>
                     @if ($c->summary)<div class="bk-muted">{{ $c->summary }}</div>@endif
                     @foreach ($c->proposals as $p)
                         <div class="bk-change"><span>{{ Record::label($p->field) }}:</span> {{ $p->new_value ?? '—' }} <span class="bk-badge bk-badge--{{ $p->decision->getColor() }}">{{ $p->decision->getLabel() }}</span></div>

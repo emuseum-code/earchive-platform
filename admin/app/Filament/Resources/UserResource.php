@@ -72,15 +72,15 @@ class UserResource extends Resource
                     ->helperText('Окремий дозвіл оператору (ТЗ 18.1).'),
                 Toggle::make('can_verify')->label('Суміщає роль верифікатора')->inline(false)
                     ->visible(fn (Get $get) => in_array($get('role'), [Role::Operator->value, Role::Operator], true))
-                    ->helperText('Оператор зможе також звіряти й підтверджувати записи (ТЗ 18.5).'),
+                    ->helperText('Оператор зможе також звіряти й підтверджувати документи (ТЗ 18.5).'),
                 Toggle::make('can_operate')->label('Суміщає роль оператора')->inline(false)->live()
                     ->visible(fn (Get $get) => in_array($get('role'), [Role::Verifier->value, Role::Verifier], true))
                     ->helperText('Верифікатор зможе також синхронізувати й запускати розпізнавання (ТЗ 18.5).'),
-                Select::make('museums')->label('Доступні музеї (усі книги музею)')->relationship('museums', 'name')->multiple()->searchable()->preload()
+                Select::make('museums')->label('Доступні архіви (усі справи архіву)')->relationship('museums', 'name')->multiple()->searchable()->preload()
                     ->hidden(fn (Get $get) => in_array($get('role'), [Role::Admin->value, Role::Admin], true)),
-                Select::make('books')->label('Окремі книги')->relationship('books', 'title')->multiple()->searchable()
+                Select::make('books')->label('Окремі справи')->relationship('books', 'title')->multiple()->searchable()
                     ->hidden(fn (Get $get) => in_array($get('role'), [Role::Admin->value, Role::Admin], true))
-                    ->helperText('Доступ лише до цих книг, якщо музей не обрано повністю.'),
+                    ->helperText('Доступ лише до цих справ, якщо архів не обрано повністю.'),
             ])]),
         ]);
     }
@@ -93,8 +93,8 @@ class UserResource extends Resource
             TextColumn::make('role')->label('Роль')->badge()
                 ->description(fn (User $u) => collect([$u->can_verify ? '+ звірка' : null, $u->can_operate ? '+ обробка' : null])->filter()->implode(', ') ?: null),
             IconColumn::make('can_adapt_export')->label('Адаптація/експорт')->boolean()->state(fn (User $u) => $u->canAdaptExport()),
-            TextColumn::make('museums.name')->label('Музеї')->listWithLineBreaks()->limitList(2)->placeholder(fn (User $u) => $u->isAdmin() ? 'Усі' : '—'),
-            TextColumn::make('books_count')->label('Окремих книг')->counts('books')->alignEnd()->toggleable(),
+            TextColumn::make('museums.name')->label('Архіви')->listWithLineBreaks()->limitList(2)->placeholder(fn (User $u) => $u->isAdmin() ? 'Усі' : '—'),
+            TextColumn::make('books_count')->label('Окремих справ')->counts('books')->alignEnd()->toggleable(),
             IconColumn::make('is_active')->label('Активний')->boolean(),
             TextColumn::make('last_login_at')->label('Останній вхід')->since()->sortable(),
         ])->filters([SelectFilter::make('role')->label('Роль')->options(Role::options())])

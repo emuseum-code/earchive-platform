@@ -41,7 +41,7 @@ class ViewAdaptation extends Page
 
     public function getTitle(): string
     {
-        return 'Адаптація запису № '.($this->record->record->record_no ?: $this->record->record_id);
+        return 'Адаптація документа № '.($this->record->record->record_no ?: $this->record->record_id);
     }
 
     public function getSubheading(): ?string
@@ -85,13 +85,13 @@ class ViewAdaptation extends Page
             return;
         }
         $this->load();
-        Notification::make()->success()->title('Адаптацію підтверджено, запис готовий до експорту')->send();
+        Notification::make()->success()->title('Адаптацію підтверджено, документ готовий до експорту')->send();
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('record')->label('Джерельний запис')->icon('heroicon-o-document-text')->color('gray')
+            Action::make('record')->label('Джерельний документ')->icon('heroicon-o-document-text')->color('gray')
                 ->url(RecordResource::getUrl('view', ['record' => $this->record->record_id])),
             \App\Filament\Support\Ai::button(Action::make('readapt')->label('Адаптувати повторно'))
                 ->visible(fn () => auth()->user()->canAdaptExport())->requiresConfirmation()

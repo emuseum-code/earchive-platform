@@ -66,14 +66,14 @@ class ReviewRemarkResource extends Resource
             TextColumn::make('field')->label('Поле')->formatStateUsing(fn ($state) => Record::label($state))->placeholder('—'),
             TextColumn::make('comment')->label('Коментар')->wrap()->lineClamp(2)->searchable(),
             TextColumn::make('suggested_value')->label('Правильне значення')->wrap()->lineClamp(2)->placeholder('—'),
-            TextColumn::make('record.record_no')->label('Запис №'),
-            TextColumn::make('book.title')->label('Книга')->wrap()->size('xs'),
+            TextColumn::make('record.record_no')->label('Документ №'),
+            TextColumn::make('book.title')->label('Справа')->wrap()->size('xs'),
             TextColumn::make('user.name')->label('Автор'),
             TextColumn::make('created_at')->label('Створено')->dateTime('d.m.Y H:i')->sortable(),
         ])->filters([
             SelectFilter::make('status')->label('Стан')->options(RemarkStatus::options())->default('open'),
             SelectFilter::make('type')->label('Тип')->options(RemarkType::options()),
-            SelectFilter::make('book_id')->label('Книга')->options(fn () => Book::visibleTo(auth()->user())->pluck('title', 'id'))->searchable(),
+            SelectFilter::make('book_id')->label('Справа')->options(fn () => Book::visibleTo(auth()->user())->pluck('title', 'id'))->searchable(),
         ])->recordActions([
             Action::make('review')->label('До звірки')->icon('heroicon-o-document-magnifying-glass')
                 ->visible(fn (ReviewRemark $r) => $r->record_id)

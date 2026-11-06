@@ -26,8 +26,8 @@ use App\Services\StorageSync;
 use Illuminate\Database\Seeder;
 
 /**
- * Демо-книга зі зразка Замовника «Інвентарна книга музею розпізнаний текст.xlsx»:
- * 4 розвороти, записи з різними статусами звірки, адаптація до РМФУ з аркуша «Адаптація для РМФУ».
+ * Демо-справа зі зразка Замовника «Справа архіву розпізнаний текст.xlsx»:
+ * 4 розвороти, документи з різними статусами звірки, адаптація до РМФУ з аркуша «Адаптація для РМФУ».
  * Зображення розворотів згенеровані з розпізнаного тексту (tools/make_demo_scans.py).
  */
 class DemoSeeder extends Seeder
@@ -42,12 +42,12 @@ class DemoSeeder extends Seeder
 
         $schema = (new RegistrySeeder)->run($data['rmfu_headers']);
 
-        // 1. Синхронізація демо-сховища створює дерево територія → музей → фонд → книга → скани
+        // 1. Синхронізація демо-сховища створює дерево територія → архів → фонд → справа → скани
         $run = app(StorageSync::class)->run(SyncRun::create(['user_id' => $operator->id, 'scope_path' => '', 'status' => 'queued']));
         $book = Book::where('folder_path', $data['book_dir'])->firstOrFail();
         $template = RecognitionTemplate::first();
         $book->update([
-            'title' => 'Інвентарна книга Д-ІІІ (документи)',
+            'title' => 'Справа Д-ІІІ (документи)',
             'book_type' => BookType::Handwritten, 'book_number' => 'Д-ІІІ', 'years' => '1993–2005', 'language' => 'російська',
             'recognition_template_id' => $template->id, 'expected_pages' => 51,
             'notes' => 'Засвідчувальний напис: «В данной книге пронумеровано и прошнуровано 51 (пятьдесят один) лист». Звірка 2005 р.: усього номерів — 57, предметів — 74. У демо-наборі 4 розвороти.',
@@ -62,7 +62,7 @@ class DemoSeeder extends Seeder
         $labels = ['photo_2026-10-29_16-09-49.jpg' => 'Розворот, арк. 45', 'photo_2026-10-29_16-09-41.jpg' => 'Розворот, арк. 30', 'photo_2026-10-29_16-09-45.jpg' => 'Розворот, арк. 4',
             'photo_2026-10-29_16-09-36.jpg' => 'Остання сторінка, засвідчувальний напис'];
 
-        // 2. Результати розпізнавання та записи єдиної таблиці
+        // 2. Результати розпізнавання та документи єдиної таблиці
         $byNo = [];
         foreach ($data['pages'] as $page) {
             $scan = Scan::where('book_id', $book->id)->where('filename', $page['filename'])->firstOrFail();
@@ -120,12 +120,12 @@ class DemoSeeder extends Seeder
         }
         $r1688 = $byNo['1688'];
         ReviewRemark::create(['record_id' => $r1688->id, 'book_id' => $book->id, 'scan_id' => $r1688->scans()->value('scans.id'), 'type' => 'field', 'field' => 'dimensions',
-            'region' => ($r1688->field_regions['dimensions'] ?? null), 'comment' => 'Пропущено одиниці виміру; у книзі «10,5 х 7,5» без «см».',
+            'region' => ($r1688->field_regions['dimensions'] ?? null), 'comment' => 'Пропущено одиниці виміру; у справі «10,5 х 7,5» без «см».',
             'current_value' => $r1688->dimensions, 'suggested_value' => '10,5 х 7,5 см', 'user_id' => $verifier->id]);
         $r1688->update(['verification_status' => 'needs_clarification']);
         $r1685 = $byNo['1685'];
         ReviewRemark::create(['record_id' => $r1685->id, 'book_id' => $book->id, 'scan_id' => $r1685->scans()->value('scans.id'), 'type' => 'continuation',
-            'comment' => 'Опис продовжується з попереднього розвороту (арк. 44). Потрібен скан арк. 44, щоб звірити початок запису.', 'user_id' => $verifier->id]);
+            'comment' => 'Опис продовжується з попереднього розвороту (арк. 44). Потрібен скан арк. 44, щоб звірити початок документа.', 'user_id' => $verifier->id]);
         $r1685->update(['verification_status' => 'needs_clarification']);
 
         // 4. Адаптація до РМФУ: значення з аркуша «Адаптація для РМФУ» Замовника
@@ -156,7 +156,7 @@ class DemoSeeder extends Seeder
         }
         $book->refreshCounters();
 
-        // 5. Експорт готових записів у шаблон РМФУ
+        // 5. Експорт готових документів у шаблон РМФУ
         $ready = Record::where('book_id', $book->id)->where('export_status', 'ready')->whereIn('record_no', ['1816', '1817', '1818'])->pluck('id')->all();
         if ($ready) {
             app(ExportService::class)->build(Export::create(['user_id' => $admin->id, 'format' => ExportFormat::Registry, 'status' => 'queued', 'filters' => ['ids' => $ready]]));

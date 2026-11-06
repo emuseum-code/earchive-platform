@@ -9,7 +9,7 @@
             Остання копія: <strong>{{ \App\Support\Tz::fmt($last['time'], 'd.m.Y H:i') }}</strong>,
             {{ number_format(($last['size'] ?? 0) / 1048576, 1, ',', ' ') }} МБ,
             {{ $statusText[$last['status']] ?? $last['status'] }}
-            ({{ ($last['check'] ?? '') === 'restore' ? 'повне тестове відновлення: '.$last['users'].' користувачів, '.$last['records'].' записів' : 'перевірено цілісність архіву' }}).
+            ({{ ($last['check'] ?? '') === 'restore' ? 'повне тестове відновлення: '.$last['users'].' користувачів, '.$last['records'].' документів' : 'перевірено цілісність архіву' }}).
         </p>
         @if (! $healthy)
             <p class="bk-danger-text">Остання копія старша за 36 годин або з помилкою. Передайте це технічному відповідальному.</p>

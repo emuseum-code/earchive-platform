@@ -6,7 +6,7 @@ use App\Enums\AdaptationStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** Представлення запису у форматі реєстру; джерельні дані лишаються в Record (ТЗ 9). */
+/** Представлення документа у форматі реєстру; джерельні дані лишаються в Record (ТЗ 9). */
 class Adaptation extends Model
 {
     protected $guarded = ['id'];

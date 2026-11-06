@@ -12,8 +12,8 @@ use Illuminate\Support\Collection;
 use Livewire\Attributes\Url;
 
 /**
- * «Єдина таблиця записів»: музеї один під одним. Клік по назві музею розгортає під нею таблицю його записів
- * (згруповану за книгами), повторний клік згортає. Одночасно відкритий один музей.
+ * «Єдина таблиця документів»: архіви один під одним. Клік по назві архіву розгортає під нею таблицю його документів
+ * (згруповану за справами), повторний клік згортає. Одночасно відкритий один архів.
  */
 class RecordMuseums extends Page
 {
@@ -21,7 +21,7 @@ class RecordMuseums extends Page
 
     protected static string|\UnitEnum|null $navigationGroup = 'Дані та звірка';
 
-    protected static ?string $title = 'Єдина таблиця записів';
+    protected static ?string $title = 'Єдина таблиця документів';
 
     protected static ?string $navigationLabel = 'Єдина таблиця';
 
@@ -31,7 +31,7 @@ class RecordMuseums extends Page
 
     protected string $view = 'filament.pages.record-museums';
 
-    /** Розгорнутий музей (у адресі, щоб після переходу до звірки й назад він лишався відкритим) */
+    /** Розгорнутий архів (у адресі, щоб після переходу до звірки й назад він лишався відкритим) */
     #[Url(as: 'museum')]
     public ?int $openMuseum = null;
 

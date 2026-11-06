@@ -1,7 +1,7 @@
 #!/bin/sh
 # Резервне копіювання бази з перевіркою відновлення (ТЗ 12, ТВ-13). Працює в контейнері books-backup (postgres:16-alpine).
 # Щодня о BACKUP_HOUR (UTC) робить pg_dump; по неділях і при першому запуску відновлює копію в тимчасову базу
-# й рахує записи, в інші дні перевіряє цілісність архіву (pg_restore --list). Копії старші за BACKUP_KEEP_DAYS видаляються.
+# й рахує документи, в інші дні перевіряє цілісність архіву (pg_restore --list). Копії старші за BACKUP_KEEP_DAYS видаляються.
 # Ручний запуск: docker compose -p books exec books-backup sh /backup.sh now
 set -u
 export PGHOST="${PGHOST:-books-db}" PGUSER="${POSTGRES_USER:-books}" PGPASSWORD="${POSTGRES_PASSWORD:-}"

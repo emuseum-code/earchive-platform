@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Розпізнавання сторінки через Gemini AI (ТЗ 6). Зберігає сиру відповідь, версію моделі й шаблону,
- * перевіряє відповідь за схемою, створює або оновлює записи єдиної таблиці.
+ * перевіряє відповідь за схемою, створює або оновлює документи єдиної таблиці.
  */
 class RecognitionService
 {
@@ -70,13 +70,13 @@ class RecognitionService
                 'page_label' => $scan->page_label ?: ($parsed['page_label'] ?? null),
             ]);
             $book->refreshCounters();
-            Activity::log('recognition.done', $scan, $book->title.' · '.$scan->filename.': записів '.$result->records_found, [], $job?->user);
+            Activity::log('recognition.done', $scan, $book->title.' · '.$scan->filename.': документів '.$result->records_found, [], $job?->user);
 
             return $result;
         });
     }
 
-    /** Повторна обробка не дублює записи й не перезаписує ручних правок без підтвердження (ТЗ 6.3). */
+    /** Повторна обробка не дублює документи й не перезаписує ручних правок без підтвердження (ТЗ 6.3). */
     private function applyRecords(Scan $scan, RecognitionResult $result, RecognitionTemplate $template, ?ProcessingJob $job): void
     {
         $existing = RecordPage::where('scan_id', $scan->id)->where('is_continuation', false)->orderBy('position')->with('record')->get()->values();
@@ -124,7 +124,7 @@ class RecognitionService
         }
     }
 
-    /** Зміни після повторного розпізнавання для запису з ручними правками — лише як пропозиції. */
+    /** Зміни після повторного розпізнавання для документа з ручними правками — лише як пропозиції. */
     private function proposeChanges(Record $record, array $data, RecognitionResult $result): void
     {
         $diff = [];
@@ -213,17 +213,17 @@ class RecognitionService
     {
         $cols = collect($t->columns)->map(fn ($c, $i) => sprintf('- "%s": графа %s «%s»', $c['key'], $c['column_no'] ?? $i + 1, $c['label']))->implode("\n");
 
-        return trim($t->prompt)."\n\nГрафи книги (ключі для поля values):\n".$cols."\n\n".<<<'TXT'
+        return trim($t->prompt)."\n\nГрафи справи (ключі для поля values):\n".$cols."\n\n".<<<'TXT'
 Правила:
-- Один елемент records = один обліковий запис книги (рядок таблиці), а не сторінка.
+- Один елемент records = один документ справи (рядок таблиці), а не сторінка.
 - Переписуй текст дослівно, мовою оригіналу, зберігаючи скорочення. Нічого не перекладай і не доповнюй.
 - Відсутнє значення не заповнюй. Нерозбірливий чи неоднозначний фрагмент залиш як прочитано і додай у uncertain з причиною.
 - «— // —», «—"—», «тж» тощо повтори як є; не підставляй значення з рядка вище.
-- Якщо перший рядок сторінки продовжує запис з попередньої сторінки, постав continuation=true.
+- Якщо перший рядок сторінки продовжує документ з попередньої сторінки, постав continuation=true.
 - Текст, що не належить до жодної графи (печатки, підписи, нотатки на полях), поклади в extra з назвою.
-- regions: рамки полів у координатах 0–1000 [ymin, xmin, ymax, xmax]; row_box — рамка всього запису.
+- regions: рамки полів у координатах 0–1000 [ymin, xmin, ymax, xmax]; row_box — рамка всього документа.
 TXT
-            .($prevTail ? "\n\nОстанній запис попередньої сторінки: ".$prevTail : '');
+            .($prevTail ? "\n\nОстанній документ попередньої сторінки: ".$prevTail : '');
     }
 
     public function schema(RecognitionTemplate $t): array
@@ -262,12 +262,12 @@ TXT
         $keys = collect($t->columns)->pluck('key')->all();
         foreach ($json['records'] as $i => $r) {
             if (! is_array($r['values'] ?? null)) {
-                $errors[] = 'Запис '.($i + 1).': немає values';
+                $errors[] = 'Документ '.($i + 1).': немає values';
 
                 continue;
             }
             if ($unknown = array_diff(array_keys($r['values']), $keys)) {
-                $errors[] = 'Запис '.($i + 1).': невідомі графи '.implode(', ', $unknown);
+                $errors[] = 'Документ '.($i + 1).': невідомі графи '.implode(', ', $unknown);
             }
         }
 

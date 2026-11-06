@@ -13,8 +13,8 @@ use Filament\Tables\Table;
 use Livewire\Component;
 
 /**
- * Таблиця записів одного музею всередині «Єдиної таблиці» (розгорнутий музей).
- * Ті самі колонки, фільтри, пошук і масові дії, що й у RecordResource, лише в межах музею.
+ * Таблиця документів одного архіву всередині «Єдиної таблиці» (розгорнутий архів).
+ * Ті самі колонки, фільтри, пошук і масові дії, що й у RecordResource, лише в межах архіву.
  */
 class MuseumRecordsTable extends Component implements HasActions, HasSchemas, HasTable
 {

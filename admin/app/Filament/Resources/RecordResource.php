@@ -39,7 +39,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
-/** Єдина таблиця розпізнаних даних: один рядок — один обліковий запис книги (ТЗ 7). */
+/** Єдина таблиця розпізнаних даних: один рядок — один документ справи (ТЗ 7). */
 class RecordResource extends Resource
 {
     use Access;
@@ -57,32 +57,32 @@ class RecordResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Дані та звірка';
 
-    protected static ?string $modelLabel = 'запис';
+    protected static ?string $modelLabel = 'документ';
 
-    protected static ?string $pluralModelLabel = 'Єдина таблиця записів';
+    protected static ?string $pluralModelLabel = 'Єдина таблиця документів';
 
     protected static ?string $navigationLabel = 'Єдина таблиця';
 
     protected static ?int $navigationSort = 1;
 
-    // у меню — сторінка вибору музею (Pages\RecordMuseums), звідти таблиця відкривається для одного музею
+    // у меню — сторінка вибору архіву (Pages\RecordMuseums), звідти таблиця відкривається для одного архіву
     protected static bool $shouldRegisterNavigation = false;
 
     public static function canCreate(): bool
     {
-        return false; // записи створює розпізнавання; пропущений запис позначається зауваженням
+        return false; // документи створює розпізнавання; пропущений документ позначається зауваженням
     }
 
     public static function getEloquentQuery(): Builder
     {
-        // scans з кількістю записів на кожному — для колонки «Сторінка» без окремого запиту на рядок
+        // scans з кількістю документів на кожному — для колонки «Сторінка» без окремого запиту на рядок
         return parent::getEloquentQuery()->visibleTo(auth()->user())
             ->select('records.*')->selectSub(static::pageSubquery(), 'page_no')
             ->with(['book', 'museum', 'fund', 'scans' => fn ($query) => $query->withCount('records')]);
     }
 
     /**
-     * Номер сторінки книги, з якої розпізнано запис (для групування й сортування «За зростанням / спаданням»):
+     * Номер сторінки справи, з якої розпізнано документ (для групування й сортування «За зростанням / спаданням»):
      * власний номер сторінки зі скану (перше число в page_label), а якщо його немає — порядковий номер скану.
      */
     public static function pageSubquery(): \Illuminate\Database\Query\Builder
@@ -95,7 +95,7 @@ class RecordResource extends Resource
             ->whereColumn('record_pages.record_id', 'records.id')->selectRaw("min({$page})");
     }
 
-    // Пошук у верхньому рядку (ТЗ 18.4): за номером запису, обліковим та інвентарним номером, назвою
+    // Пошук у верхньому рядку (ТЗ 18.4): за номером документа, обліковим та інвентарним номером, назвою
     protected static ?string $recordTitleAttribute = 'record_no';
 
     public static function getGloballySearchableAttributes(): array
@@ -105,12 +105,12 @@ class RecordResource extends Resource
 
     public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
     {
-        return 'Запис № '.$record->record_no.($record->title ? ' · '.\Illuminate\Support\Str::limit($record->title, 60) : '');
+        return 'Документ № '.$record->record_no.($record->title ? ' · '.\Illuminate\Support\Str::limit($record->title, 60) : '');
     }
 
     public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
     {
-        return array_filter(['Книга' => $record->book?->title, 'Інв. №' => $record->inventory_number, 'Звірка' => $record->verification_status?->getLabel()]);
+        return array_filter(['Справа' => $record->book?->title, 'Інв. №' => $record->inventory_number, 'Звірка' => $record->verification_status?->getLabel()]);
     }
 
     public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): string
@@ -140,7 +140,7 @@ class RecordResource extends Resource
                     ? Textarea::make($key)->label($f[0])->rows($key === 'description' ? 5 : 2)->columnSpan($key === 'description' ? 3 : 1)
                     : TextInput::make($key)->label($f[0]))->values()->all()
             )]))->values()->all(),
-            Section::make('Додаткові поля з книги')->columnSpanFull()->collapsible()->schema([
+            Section::make('Додаткові поля з справи')->columnSpanFull()->collapsible()->schema([
                 KeyValue::make('extra_fields')->hiddenLabel()->keyLabel('Назва графи')->valueLabel('Значення'),
             ]),
         ]);
@@ -172,9 +172,9 @@ class RecordResource extends Resource
     public static function table(Table $table): Table
     {
         $cols = [
-            // музей не повторюється в кожному рядку: таблиця завжди відкрита в межах одного музею
-            TextColumn::make('book.title')->label('Книга')->toggleable(isToggledHiddenByDefault: true)->wrap()->size('xs'),
-            // Сторінка (розворот) книги, з якої розпізнано запис; запис на двох розворотах — «5–6». Під номером — скільки записів на цій сторінці.
+            // архів не повторюється в кожному рядку: таблиця завжди відкрита в межах одного архіву
+            TextColumn::make('book.title')->label('Справа')->toggleable(isToggledHiddenByDefault: true)->wrap()->size('xs'),
+            // Сторінка (розворот) справи, з якої розпізнано документ; документ на двох розворотах — «5–6». Під номером — скільки документів на цій сторінці.
             TextColumn::make('page')->label('Сторінка')->alignCenter()->placeholder('—')->toggleable(isToggledHiddenByDefault: true)
                 ->state(fn (Record $record) => $record->scans->map(fn ($s) => $s->page_label ?: $s->page_order)->implode('–') ?: null)
                 ->tooltip(fn (Record $record) => $record->scans->pluck('filename')->implode(', ') ?: null),
@@ -205,27 +205,27 @@ class RecordResource extends Resource
         return $table
             ->defaultSort(fn ($query) => $query->orderBy('book_id')->orderBy('sequence'))
             ->groups([
-                // типово: «Книга · сторінка N» з кількістю записів, під заголовком — записи цієї сторінки
-                Group::make('page_no')->label('Сторінка книги')->collapsible()
+                // типово: «Справа · сторінка N» з кількістю документів, під заголовком — документи цієї сторінки
+                Group::make('page_no')->label('Сторінка справи')->collapsible()
                     ->getKeyFromRecordUsing(fn (Record $record) => $record->book_id.'-'.($record->page_no ?? 0))
-                    // групи йдуть за номером сторінки книги (з «За зростанням / спаданням»); у дужках — порядковий номер скану, якщо він інший
-                    ->getTitleFromRecordUsing(fn (Record $record) => ($record->book?->title ?? 'Без книги').' · сторінка '.($record->page_no ?? '—')
+                    // групи йдуть за номером сторінки справи (з «За зростанням / спаданням»); у дужках — порядковий номер скану, якщо він інший
+                    ->getTitleFromRecordUsing(fn (Record $record) => ($record->book?->title ?? 'Без справи').' · сторінка '.($record->page_no ?? '—')
                         .(($scan = $record->scans->first()) && $scan->page_order != $record->page_no ? ' (скан '.$scan->page_order.')' : ''))
                     ->getDescriptionFromRecordUsing(fn (Record $record) => ($n = $record->scans->first()?->records_count)
-                        ? $n.' '.trans_choice('запис|записи|записів', $n).' на сторінці' : null)
+                        ? $n.' '.trans_choice('документ|документи|документів', $n).' на сторінці' : null)
                     ->orderQueryUsing(fn ($query, string $direction) => $query->orderBy('records.book_id')->orderBy('page_no', $direction))
                     ->scopeQueryByKeyUsing(function ($query, string $key) {
                         [$book, $page] = array_map('intval', explode('-', $key, 2) + [1 => 0]);
 
                         return $query->where('records.book_id', $book)->where(static::pageSubquery(), $page ?: null);
                     }),
-                Group::make('book_id')->label('Книга')->collapsible()
-                    ->getTitleFromRecordUsing(fn (Record $record) => $record->book?->title ?? 'Без книги'),
+                Group::make('book_id')->label('Справа')->collapsible()
+                    ->getTitleFromRecordUsing(fn (Record $record) => $record->book?->title ?? 'Без справи'),
             ])
             ->defaultGroup('page_no')
             ->paginated([25, 50, 100])
             ->defaultPaginationPageOption(25)
-            ->searchPlaceholder('Текст, № запису, інвентарний чи обліковий номер')
+            ->searchPlaceholder('Текст, № документа, інвентарний чи обліковий номер')
             ->searchable()
             ->searchUsing(fn (Builder $q, string $search) => $q->where(fn ($w) => $w
                 ->where('title', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%")
@@ -233,8 +233,8 @@ class RecordResource extends Resource
                 ->orWhere('record_no', 'like', "%{$search}%")->orWhere('acquisition_source', 'like', "%{$search}%")))
             ->columns($cols)
             ->filters([
-                SelectFilter::make('museum_id')->label('Музей')->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id'))->searchable(),
-                SelectFilter::make('book_id')->label('Книга')->options(fn () => Book::visibleTo(auth()->user())->orderBy('title')->pluck('title', 'id'))->searchable(),
+                SelectFilter::make('museum_id')->label('Архів')->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id'))->searchable(),
+                SelectFilter::make('book_id')->label('Справа')->options(fn () => Book::visibleTo(auth()->user())->orderBy('title')->pluck('title', 'id'))->searchable(),
                 SelectFilter::make('fund_id')->label('Фонд')->options(fn () => Fund::pluck('name', 'id')),
                 SelectFilter::make('verification_status')->label('Звірка')->options(VerificationStatus::options())->multiple(),
                 SelectFilter::make('adaptation_status')->label('Адаптація')->options(AdaptationStatus::options())->multiple(),
@@ -283,7 +283,7 @@ class RecordResource extends Resource
                     ->action(function (array $data, $livewire) {
                         $filters = collect($livewire->tableFilters ?? [])->map(fn ($f) => $f['value'] ?? $f['values'] ?? null)->filter()->all();
                         $filters['search'] = $livewire->getTableSearch();
-                        if (isset($livewire->museumId)) { // таблиця всередині розгорнутого музею (App\Livewire\MuseumRecordsTable)
+                        if (isset($livewire->museumId)) { // таблиця всередині розгорнутого архіву (App\Livewire\MuseumRecordsTable)
                             $filters['museum_id'] = $livewire->museumId;
                         }
                         static::startExport($data['format'], array_filter($filters));
@@ -292,7 +292,7 @@ class RecordResource extends Resource
             ->toolbarActions([
                 \App\Filament\Support\Ai::item(BulkAction::make('adapt')->label('Адаптувати до реєстру'))
                     ->visible(fn () => auth()->user()->canAdaptExport())->requiresConfirmation()
-                    ->modalDescription('Адаптуються лише записи зі статусом «Перевірено». Неоднозначності буде передано верифікатору.')
+                    ->modalDescription('Адаптуються лише документи зі статусом «Перевірено». Неоднозначності буде передано верифікатору.')
                     ->action(function (Collection $records) {
                         $q = app(QueueManager::class);
                         $n = 0;

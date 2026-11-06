@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/** Облікова книга музею (ТЗ 4.1). */
+/** Облікова справа архіву (ТЗ 4.1). */
 class Book extends Model
 {
     use HasUid, SoftDeletes;
@@ -26,12 +26,12 @@ class Book extends Model
         return ['book_type' => BookType::class, 'synced_at' => 'datetime'];
     }
 
-    /** Записи книги завжди в тому самому музеї й фонді, що й книга: після зміни в картці книги вони переносяться разом із нею. */
+    /** Документи справи завжди в тому самому архіви й фонді, що й справа: після зміни в картці справи вони переносяться разом із нею. */
     protected static function booted(): void
     {
         static::updated(function (self $book) {
             if ($book->wasChanged(['fund_id', 'museum_id'])) {
-                // без updated_at і версії запису: змінюється лише прив’язка, не дані звірки
+                // без updated_at і версії документа: змінюється лише прив’язка, не дані звірки
                 \Illuminate\Support\Facades\DB::table('records')->where('book_id', $book->id)
                     ->update(['fund_id' => $book->fund_id, 'museum_id' => $book->museum_id]);
             }
@@ -75,7 +75,7 @@ class Book extends Model
         return $ids === null && $user ? $q : $q->whereIn('books.id', $ids ?? []);
     }
 
-    /** Перерахунок лічильників картки книги. */
+    /** Перерахунок лічильників картки справи. */
     public function refreshCounters(): void
     {
         $scans = $this->scans()->reorder()->toBase()
