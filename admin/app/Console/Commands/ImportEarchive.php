@@ -95,6 +95,16 @@ class ImportEarchive extends Command
         if ($this->option('recognized')) {
             $this->loadRecognized(array_keys($done), $recognition);
         }
+        // розділ каталогу — для фільтра «Розділ еАрхіву»
+        if ($data['category_id'] ?? null) {
+            foreach (Book::whereIn('folder_path', array_keys($done))->get() as $book) {
+                foreach ($book->records()->get() as $record) {
+                    if (empty($record->extra_fields['earchive_category'])) {
+                        $record->update(['extra_fields' => array_merge($record->extra_fields ?? [], ['earchive_category' => $data['category']])]);
+                    }
+                }
+            }
+        }
         Museum::where('name', 'ЦДАВО України')->update(['notes' => 'Центральний державний архів вищих органів влади та управління України']);
         $this->info('Справ: '.count($done).', документів: '.collect($done)->flatten(1)->count());
 

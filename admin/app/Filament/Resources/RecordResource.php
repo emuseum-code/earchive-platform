@@ -16,6 +16,7 @@ use App\Models\Fund;
 use App\Models\Museum;
 use App\Models\Record;
 use App\Services\QueueManager;
+use App\Support\ArchiveSearch;
 use App\Support\Tz;
 use Carbon\Carbon;
 use Filament\Actions\Action;
@@ -249,6 +250,9 @@ class RecordResource extends Resource
                 SelectFilter::make('museum_id')->label('Архів')->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id'))->searchable(),
                 SelectFilter::make('book_id')->label('Справа')->options(fn () => Book::visibleTo(auth()->user())->orderBy('title')->pluck('title', 'id'))->searchable(),
                 SelectFilter::make('fund_id')->label('Фонд')->options(fn () => Fund::pluck('name', 'id')),
+                SelectFilter::make('earchive_category')->label('Розділ еАрхіву')
+                    ->options(fn () => array_combine(ArchiveSearch::sections(), ArchiveSearch::sections()) ?: [])->searchable()
+                    ->query(fn (Builder $query, array $data) => $data['value'] ? $query->where('extra_fields->earchive_category', $data['value']) : $query),
                 SelectFilter::make('verification_status')->label('Звірка')->options(VerificationStatus::options())->multiple(),
                 SelectFilter::make('adaptation_status')->label('Адаптація')->options(AdaptationStatus::options())->multiple(),
                 SelectFilter::make('export_status')->label('Експорт')->options(ExportStatus::options())->multiple(),

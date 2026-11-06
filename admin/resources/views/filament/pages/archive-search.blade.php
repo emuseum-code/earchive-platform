@@ -20,6 +20,14 @@
                     <option value="{{ $id }}">{{ $name }}</option>
                 @endforeach
             </select>
+            @if ($sections = $this->sections())
+                <select class="bk-input" style="flex:0 1 16rem" wire:model.live="section" aria-label="Розділ еАрхіву">
+                    <option value="">Усі розділи еАрхіву</option>
+                    @foreach ($sections as $name)
+                        <option value="{{ $name }}">{{ $name }}</option>
+                    @endforeach
+                </select>
+            @endif
         </div>
         <p class="bk-muted" style="margin-top:.5rem">Шукає в повному тексті документів, заголовках, змісті, особах, місцях, установах і шифрах. Кілька слів — знайдуться документи, де є всі.</p>
     </div>

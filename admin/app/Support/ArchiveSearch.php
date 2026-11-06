@@ -43,7 +43,7 @@ class ArchiveSearch
         return mb_strlen($cut) >= 4 ? $cut : $word;
     }
 
-    public static function query(string $q, ?User $user = null, ?int $museumId = null): Builder
+    public static function query(string $q, ?User $user = null, ?int $museumId = null, ?string $section = null): Builder
     {
         $op = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
         $query = Record::query()->with(['book.fund', 'museum']);
@@ -68,6 +68,7 @@ class ArchiveSearch
         }
 
         return $query->when($museumId, fn (Builder $query) => $query->where('museum_id', $museumId))
+            ->when($section, fn (Builder $query) => $query->where('extra_fields->earchive_category', $section))
             ->orderBy('museum_id')->orderBy('book_id')->orderBy('sequence');
     }
 
@@ -115,5 +116,17 @@ class ArchiveSearch
         }
 
         return $html;
+    }
+
+    /** Розділи каталогу еАрхіву МЗС (поле extra_fields.earchive_category документів). */
+    public static function sections(): array
+    {
+        $file = database_path('data/earchive/catalog.json');
+        if (! is_file($file)) {
+            return [];
+        }
+
+        return cache()->remember('archive.sections.'.filemtime($file), 3600, fn () => collect(json_decode(file_get_contents($file), true)['documents'])
+            ->pluck('category')->filter()->unique()->sort()->values()->all());
     }
 }

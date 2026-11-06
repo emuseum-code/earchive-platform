@@ -36,6 +36,9 @@ class ArchiveSearchPage extends Page
     #[Url(as: 'archive')]
     public ?int $museum = null;
 
+    #[Url(as: 'section')]
+    public ?string $section = null;
+
     public static function canAccess(): bool
     {
         return RecordResource::canViewAny();
@@ -51,6 +54,16 @@ class ArchiveSearchPage extends Page
         $this->resetPage();
     }
 
+    public function updatedSection(): void
+    {
+        $this->resetPage();
+    }
+
+    public function sections(): array
+    {
+        return ArchiveSearch::sections();
+    }
+
     public function museums(): array
     {
         return Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id')->all();
@@ -58,11 +71,12 @@ class ArchiveSearchPage extends Page
 
     public function results(): ?LengthAwarePaginator
     {
-        if (! ArchiveSearch::terms($this->q)) {
+        // без слова, але з розділом — показуємо всі документи розділу
+        if (! ArchiveSearch::terms($this->q) && ! $this->section) {
             return null;
         }
 
-        return ArchiveSearch::query($this->q, auth()->user(), $this->museum ?: null)->paginate(20);
+        return ArchiveSearch::query($this->q, auth()->user(), $this->museum ?: null, $this->section ?: null)->paginate(20);
     }
 
     public function snippets($record)
