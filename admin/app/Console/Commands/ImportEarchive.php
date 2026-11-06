@@ -79,8 +79,8 @@ class ImportEarchive extends Command
             $catalog = collect($docs)->map(fn ($x) => '• арк. '.$x['sheets'].': '.$x['title'].' ('.$x['date'].') '.$x['url'])->implode("\n");
             $book->update([
                 'inventory_no' => $d['inventory'], 'book_number' => $d['case'],
-                'language' => collect($docs)->pluck('languages')->flatten()->filter()->unique()->implode(', ') ?: null,
-                'years' => collect($docs)->pluck('date')->implode('; '),
+                'language' => Str::limit(collect($docs)->pluck('languages')->flatten()->filter()->unique()->implode(', '), 29, '…') ?: null,
+                'years' => self::years($docs),
                 'notes' => "За каталогом еАрхіву МЗС, розділ «{$data['category']}»:\n".$catalog,
             ]);
             // підпис сторінки: PDF документа й номер сторінки в ньому
@@ -130,6 +130,15 @@ class ImportEarchive extends Command
     }
 
     /** м. Київ / ЦДАВО України / Ф. 3696 Міністерство закордонних справ УНР / Опис 2 / Справа 21а */
+    /** Роки справи для поля на 50 знаків: «1920» або «1920–1921» (повні дати лишаються в примітках). */
+    public static function years(array $docs): ?string
+    {
+        preg_match_all('/\b(1[5-9]\d\d|20\d\d)\b/u', collect($docs)->pluck('date')->implode(' '), $m);
+        $y = collect($m[1])->map(fn ($x) => (int) $x)->unique()->sort()->values();
+
+        return $y->isEmpty() ? null : ($y->first() === $y->last() ? (string) $y->first() : $y->first().'–'.$y->last());
+    }
+
     public static function caseDir(array $doc): string
     {
         $clean = fn (?string $s) => trim(str_replace(['/', '\\'], ' ', (string) $s));
