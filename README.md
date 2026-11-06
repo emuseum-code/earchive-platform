@@ -2,7 +2,7 @@
 
 Адмінка для розпізнавання архівних справ: скани аркушів зі сховища → розпізнавання Gemini (поля опису документа й повний текст) → звірка зі сканом → AI-перевірка → описова стаття ISAD(G) → експорт.
 
-Копія системи eBooks (emuseum-code/books), перероблена під архівні документи. Стек: Laravel 13 + Filament 5, PHP 8.3, PostgreSQL (локально SQLite), черга Laravel (database).
+Репозиторій emuseum-code/earchive-platform, домен arch.emuseum.ua. Копія системи eBooks (emuseum-code/books), перероблена під архівні документи. Стек: Laravel 13 + Filament 5, PHP 8.3, PostgreSQL (локально SQLite), черга Laravel (database).
 
 ## Швидкий старт
 

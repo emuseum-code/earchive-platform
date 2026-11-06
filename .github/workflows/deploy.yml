@@ -1,7 +1,7 @@
 # Deploys the archive-document admin to the shared VPS by hand (Actions → Deploy → Run workflow).
 # The VPS is shared: agree every deploy with the coordinator first, one project at a time.
 # Repository secrets (DEPLOY_HOST, DEPLOY_USER, DEPLOY_PORT and DOMAIN may also be repository variables):
-# DEPLOY_HOST, DEPLOY_USER (e.g. root), DEPLOY_SSH_KEY (private key, same as the museum portal), DOMAIN (archive.emuseum.ua),
+# DEPLOY_HOST, DEPLOY_USER (e.g. root), DEPLOY_SSH_KEY (private key, same as the museum portal), DOMAIN (arch.emuseum.ua),
 # ADMIN_PASSWORD (password of the demo users *@archive.test, seeds the database on the first deploy), optional GEMINI_API_KEY, DEPLOY_PORT.
 name: Deploy
 
@@ -17,7 +17,7 @@ jobs:
       HOST: ${{ secrets.DEPLOY_HOST || vars.DEPLOY_HOST }}
       USER: ${{ secrets.DEPLOY_USER || vars.DEPLOY_USER || 'root' }}
       PORT: ${{ secrets.DEPLOY_PORT || vars.DEPLOY_PORT || '22' }}
-      DOMAIN: ${{ secrets.DOMAIN || vars.DOMAIN || 'archive.emuseum.ua' }}
+      DOMAIN: ${{ secrets.DOMAIN || vars.DOMAIN || 'arch.emuseum.ua' }}
       HAS_KEY: ${{ secrets.DEPLOY_SSH_KEY != '' }}
     steps:
       - name: Check secrets
