@@ -17,5 +17,5 @@ jobs:
           ssh -i ~/.ssh/id_deploy -p "$PORT" "$USER@$HOST" '
             cd /opt/archive && C="docker compose -p archive -f docker-compose.yml -f docker-compose.prod.yml"
             $C ps --format "{{.Service}} {{.Status}}"
-            $C logs --tail 80 archive-app
+            $C logs archive-app | grep -v "index.php" | head -80
             $C exec -T archive-app sh -c "ls -la storage/app | head -20; php artisan tinker --execute=\"echo App\\\\Models\\\\Book::count().\\\" books, \\\".App\\\\Models\\\\Scan::count().\\\" scans, \\\".App\\\\Models\\\\Record::count().\\\" records\\\\n\\\";\""'
