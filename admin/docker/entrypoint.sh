@@ -26,6 +26,10 @@ if [ "${RUN_MIGRATIONS:-0}" = "1" ]; then
         php artisan archive:import-earchive 2 --ids=167,249,474,493,494,598,648,667,692,848 --recognized \
             && touch storage/app/.earchive-imported || true
     fi
+    # увесь каталог еАрхіву МЗС (1014 документів, метадані без сканів; лише відсутні, один раз)
+    if [ -f storage/app/.seeded ] && [ ! -f storage/app/.earchive-catalog ]; then
+        php artisan archive:import-earchive-catalog && touch storage/app/.earchive-catalog || true
+    fi
     php artisan config:cache && php artisan route:cache && php artisan view:cache
 fi
 # artisan above runs as root; php-fpm (www-data) must be able to write the caches, logs, thumbnails and exports

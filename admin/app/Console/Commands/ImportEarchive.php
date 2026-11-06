@@ -144,7 +144,14 @@ class ImportEarchive extends Command
         $clean = fn (?string $s) => trim(str_replace(['/', '\\'], ' ', (string) $s));
         $fundName = Str::limit($clean(Str::before((string) $doc['fund_name'], ',')), 110, '');
 
-        return implode('/', ['м. Київ', $clean($doc['archive'] ?: 'Архів'), trim('Ф. '.$doc['fund'].' '.$fundName),
+        // українські центральні державні архіви — у Києві, архіви інших країн і посольства — «За кордоном»
+        $place = match (true) {
+            preg_match('/^ЦДА[А-ЯІЇЄҐ]/u', (string) $doc['archive']) === 1 => 'м. Київ',
+            in_array($doc['archive'], [null, '', 'Архів не вказано'], true) => 'Не вказано',
+            default => 'За кордоном',
+        };
+
+        return implode('/', [$place, $clean($doc['archive'] ?: 'Архів'), trim('Ф. '.$doc['fund'].' '.$fundName),
             'Опис '.$clean($doc['inventory'] ?: '1'), 'Справа '.$clean($doc['case'])]);
     }
 }

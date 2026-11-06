@@ -196,6 +196,15 @@ class StorageSync
         return null;
     }
 
+    /** Справа за шляхом папки без сканів (каталог документів): ті самі правила папок, що й синхронізація. */
+    public function ensureBook(string $rel, SyncRun $run): ?Book
+    {
+        $this->root = rtrim((string) Settings::get('storage.root'), '/');
+        $this->rules = FolderRule::where('is_active', true)->orderBy('priority')->get()->all();
+
+        return $this->resolveBook(trim($rel, '/'), 0, $run);
+    }
+
     private function resolveBook(string $rel, int $jpgCount, SyncRun $run): ?Book
     {
         if ($book = Book::withTrashed()->where('folder_path', $rel)->first()) {
