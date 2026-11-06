@@ -30,6 +30,12 @@ class ImportEarchiveCatalog extends Command
 
         foreach ($data['documents'] as $doc) {
             if (in_array(basename((string) $doc['file']), $withPdf, true)) {
+                // уже розпізнані з PDF: лише розділ каталогу для фільтра
+                foreach (Book::where('folder_path', ImportEarchive::caseDir($doc))->first()?->records()->get() ?? [] as $record) {
+                    if (empty($record->extra_fields['earchive_category']) && $doc['category']) {
+                        $record->update(['extra_fields' => array_merge($record->extra_fields ?? [], ['earchive_category' => $doc['category']])]);
+                    }
+                }
                 $skipped++;
 
                 continue;
