@@ -65,9 +65,7 @@ class DatabaseSeeder extends Seeder
                 .'Мова може бути українська (зокрема правопис 1920-х), російська з дореформеною орфографією, польська, німецька, їдиш.',
         ]);
 
-        Settings::set('storage.root', storage_path('demo-scans'));
-        Settings::set('ai.demo_mode', true);
-
-        $this->call(DemoSeeder::class);
+        Settings::set('storage.root', storage_path('app/scans'));
+        (new RegistrySeeder)->run();
     }
 }

@@ -23,7 +23,7 @@ class InitStorage extends Command
     {
         $target = storage_path('app/scans');
         $root = rtrim((string) Settings::get('storage.root'), '/');
-        if ($root !== '' && $root !== $target && $root !== storage_path('demo-scans')) {
+        if ($root !== '' && $root !== $target && $root !== storage_path('demo-scans') && $root !== storage_path('app/scans')) {
             $this->info("Коренева директорія {$root} задана вручну, не змінюю.");
 
             return self::SUCCESS;

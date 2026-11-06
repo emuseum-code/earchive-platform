@@ -2,13 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Models\Adaptation;
 use App\Models\Book;
 use App\Models\Record;
 use App\Models\User;
 use App\Services\AdaptationService;
 use App\Services\StorageSync;
+use App\Support\Settings;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+use Symfony\Component\Process\ExecutableFinder;
 use Tests\TestCase;
 
 /** Демо-справа сідиться, а всі сторінки адмінки відкриваються без помилок. */
@@ -20,20 +23,29 @@ class AdminPagesTest extends TestCase
     {
         parent::setUp();
         $this->seed();
+        if (! (new ExecutableFinder)->find('pdftoppm')) {
+            $this->markTestSkipped('pdftoppm (poppler-utils) не встановлено');
+        }
+        config(['filesystems.disks.local.root' => storage_path('framework/testing')]);
+        Settings::set('storage.root', $root = storage_path('framework/testing/scans-'.uniqid()));
+        $pdfDir = $root.'-pdf';
+        File::ensureDirectoryExists($pdfDir);
+        file_put_contents($pdfDir.'/3696-2-21а-ark7-10.pdf', Pdf::loadHTML('<p>Нота</p><div style="page-break-after:always"></div><p>2</p>')->output());
+        $this->artisan('archive:import-earchive', ['category' => 2, '--ids' => '474', '--pdf-dir' => $pdfDir, '--dpi' => 30])->assertSuccessful();
+        // документ, як після розпізнавання
+        $book = Book::firstOrFail();
+        $scan = $book->scans()->orderBy('page_order')->firstOrFail();
+        $record = Record::create(['book_id' => $book->id, 'museum_id' => $book->museum_id, 'fund_id' => $book->fund_id, 'record_no' => '1',
+            'doc_type' => 'Нота', 'title' => 'Нота Голови Делегації УНР в Парижі', 'doc_date' => '12 лютого 1919', 'full_text' => 'Monsieur le Président…']);
+        $record->pages()->create(['scan_id' => $scan->id, 'position' => 1]);
     }
 
-    public function test_demo_case_is_recognized_into_documents(): void
+    public function test_earchive_case_is_imported(): void
     {
         $book = Book::firstOrFail();
-        $this->assertSame('Ф. Р-101, оп. 1, спр. 7', $book->archiveCode());
-        $this->assertSame(4, Record::count());
-
-        // лист на двох аркушах — один документ, текст другого аркуша дописано
-        $letter = Record::where('record_no', '1')->firstOrFail();
-        $this->assertSame(2, $letter->pages()->count());
-        $this->assertStringContainsString('Доводжу до відома', $letter->full_text);
-        $this->assertStringContainsString('Т. Гнатюк', $letter->full_text);
-        $this->assertSame(2, Adaptation::where('status', 'adapted')->count());
+        $this->assertSame('Ф. 3696, оп. 2, спр. 21а', $book->archiveCode());
+        $this->assertSame(2, $book->scans()->count());
+        $this->assertStringContainsString('earchive.mfa.gov.ua/catalog/', $book->notes);
     }
 
     public function test_admin_pages_open(): void
@@ -45,9 +57,8 @@ class AdminPagesTest extends TestCase
             '/admin', '/admin/records-by-museum', '/admin/museum-desk', '/admin/tree', '/admin/books',
             '/admin/museums', '/admin/adaptations', '/admin/exports', '/admin/settings', '/admin/registry-schemas', '/admin/adaptation-rules',
             '/admin/recognition-templates', '/admin/dictionaries', '/admin/review-remarks', '/admin/processing-jobs', '/admin/users',
-            '/admin/records?search=Гнатюк', '/admin/records?filters[museum_id][value]='.$record->museum_id, "/admin/records/{$record->id}", "/admin/records/{$record->id}/review", "/admin/records/{$record->id}/edit",
+            '/admin/records?search=Président', '/admin/records?filters[museum_id][value]='.$record->museum_id, "/admin/records/{$record->id}", "/admin/records/{$record->id}/review", "/admin/records/{$record->id}/edit",
             "/admin/books/{$book->id}", "/admin/books/{$book->id}/pages", "/admin/books/{$book->id}/edit",
-            '/admin/adaptations/'.Adaptation::firstOrFail()->id,
         ];
         foreach ($urls as $url) {
             $r = $this->get($url);
