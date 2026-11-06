@@ -166,6 +166,19 @@ class StorageSync
         return ['cover' => 0, 'content' => 1, 'last' => 2][self::pageKind($filename)];
     }
 
+    /**
+     * Номер з назви папки: «Опис 2» → «2», «Ф. Р-1 Губвиконком» → «Р-1», «Справа 15а» → «15а».
+     * $prefixed — лише якщо назва починається зі слова «фонд», «справа» тощо (інакше null).
+     */
+    public static function number(string $segment, bool $prefixed = false): ?string
+    {
+        if (preg_match('/^\s*(?:ф(?:онд)?|оп(?:ис)?|спр(?:ава)?|д(?:ело)?|f(?:ond)?)\.?\s*№?\s*([А-ЯҐЄІЇA-Z]{0,3}-?\d+[а-яa-z]?)/iu', $segment, $m)) {
+            return $m[1];
+        }
+
+        return $prefixed ? null : (preg_match('/(\d+[а-яa-z]?)/u', $segment, $m) ? $m[1] : $segment);
+    }
+
     /** Рівень сегмента шляху за правилами: шаблон назви має пріоритет над глибиною. */
     private function levelOf(string $segment, int $depth): ?FolderLevel
     {
@@ -204,6 +217,7 @@ class StorageSync
         $segments = explode('/', $rel);
         $territory = $museum = null;
         $fundParts = [];
+        $inventory = null;
         foreach ($segments as $depth => $seg) {
             $isLast = $depth === count($segments) - 1;
             $level = $isLast ? FolderLevel::Book : $this->levelOf($seg, $depth);
@@ -215,6 +229,7 @@ class StorageSync
                 FolderLevel::Territory => $territory = Territory::firstOrCreate(['folder_path' => $path], ['name' => $seg]),
                 FolderLevel::Museum => $museum = Museum::withTrashed()->firstOrCreate(['folder_path' => $path], ['name' => $seg, 'territory_id' => $territory?->id]),
                 FolderLevel::Fund => $fundParts[] = [$seg, $path],
+                FolderLevel::Inventory => $inventory = self::number($seg),
                 default => null,
             };
         }
@@ -230,18 +245,21 @@ class StorageSync
         $fund = null;
         if ($fundParts) {
             [$name, $path] = end($fundParts);
-            $fund = Fund::firstOrCreate(['folder_path' => $path], ['museum_id' => $museum->id, 'name' => $name]);
+            $fund = Fund::firstOrCreate(['folder_path' => $path], ['museum_id' => $museum->id, 'name' => $name, 'code' => self::number($name, true)]);
         }
 
-        return $this->createBook($museum->id, $fund?->id, $rel, $run);
+        return $this->createBook($museum->id, $fund?->id, $rel, $run, null, $inventory);
     }
 
-    private function createBook(int $museumId, ?int $fundId, string $rel, SyncRun $run, ?UnmappedFolder $manual = null): Book
+    private function createBook(int $museumId, ?int $fundId, string $rel, SyncRun $run, ?UnmappedFolder $manual = null, ?string $inventory = null): Book
     {
+        $title = Str::afterLast($rel, '/') ?: $rel;
         $book = Book::create([
             'museum_id' => $museumId,
             'fund_id' => $fundId,
-            'title' => Str::afterLast($rel, '/') ?: $rel,
+            'inventory_no' => $inventory,
+            'book_number' => self::number($title, true),
+            'title' => $title,
             'folder_path' => $rel,
         ]);
         $manual?->update(['book_id' => $book->id]);

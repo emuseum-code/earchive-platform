@@ -61,7 +61,7 @@ class AdaptationService
                 if ($v !== null && ! empty($rule->params['dictionaries'])) {
                     $unknown = self::unknownTerms((string) $v, $rule->params['dictionaries']);
                     if ($unknown) {
-                        $issues[] = ['field' => $rule->target_field, 'level' => 'ambiguity', 'message' => 'Немає в тезаурусах РМФУ: «'.implode('», «', $unknown).'»'];
+                        $issues[] = ['field' => $rule->target_field, 'level' => 'ambiguity', 'message' => 'Немає в довідниках: «'.implode('», «', $unknown).'»'];
                     }
                 }
                 $values[$rule->target_field] = $v;
@@ -96,7 +96,7 @@ class AdaptationService
     /** Ручне виправлення адаптованих значень верифікатором з перевіркою версії. */
     public function updateValues(Adaptation $a, array $values, User $user, int $expectedLock): Adaptation
     {
-        return DB::transaction(function () use ($a, $values, $user, $expectedLock) {
+        return DB::transaction(function () use ($a, $values, $expectedLock) {
             $fresh = Adaptation::whereKey($a->id)->lockForUpdate()->first();
             if ($fresh->lock_version !== $expectedLock) {
                 throw new \DomainException('Адаптацію вже змінив інший працівник. Оновіть сторінку.');
@@ -164,7 +164,7 @@ class AdaptationService
                     'message' => $f->type === 'dictionary' ? 'Значення немає в довіднику «'.$f->dictionary?->name.'»' : 'Неправильний формат ('.$f->type.')'];
             }
         }
-        foreach ([['created_year_from', 'created_year_to'], ['found_year_from', 'found_year_to'], ['used_year_from', 'used_year_to']] as [$from, $to]) {
+        foreach ([['year_from', 'year_to']] as [$from, $to]) {
             if (is_numeric($values[$from] ?? null) && is_numeric($values[$to] ?? null) && $values[$from] > $values[$to]) {
                 $issues[] = ['field' => $to, 'level' => 'error', 'message' => 'Рік «До» менший за рік «З»'];
             }
@@ -213,9 +213,22 @@ class AdaptationService
         };
     }
 
-    /** «28.08.1996 г.», «02.1993», «1975 р.» → 1996-08-28 / 1993-02 / 1975. */
+    private const MONTHS = [
+        'січ' => 1, 'лют' => 2, 'берез' => 3, 'квіт' => 4, 'трав' => 5, 'черв' => 6, 'лип' => 7, 'серп' => 8, 'верес' => 9, 'жовт' => 10, 'листоп' => 11, 'груд' => 12,
+        'янв' => 1, 'февр' => 2, 'март' => 3, 'апрел' => 4, 'ма' => 5, 'июн' => 6, 'июл' => 7, 'август' => 8, 'сентябр' => 9, 'октябр' => 10, 'ноябр' => 11, 'декабр' => 12,
+    ];
+
+    /** «28.08.1996 г.», «12 березня 1927 р.», «02.1993», «1975 р.» → 1996-08-28 / 1927-03-12 / 1993-02 / 1975. */
     public static function normalizeDate(string $raw): array
     {
+        if (preg_match('/\b(\d{1,2})\s+([[:alpha:]]+)\.?\s+(\d{4})/u', $raw, $m)) {
+            $word = mb_strtolower($m[2]);
+            foreach (self::MONTHS as $stem => $n) {
+                if (str_starts_with($word, $stem) && ($stem !== 'ма' || in_array($word, ['мая', 'май'], true))) {
+                    return [sprintf('%04d-%02d-%02d', $m[3], $n, $m[1]), null];
+                }
+            }
+        }
         if (preg_match('/\b(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})\b/u', $raw, $m)) {
             return [sprintf('%04d-%02d-%02d', $m[3], $m[2], $m[1]), null];
         }
@@ -238,12 +251,12 @@ class AdaptationService
         return $ys ? [min($ys), max($ys)] : [null, null];
     }
 
-    /** «10,5 х 7,5 см» → «H 10,5 см; W 7,5 см» (формат шаблону РМФУ). */
+    /** «10,5 х 7,5 см» → «H 10,5 см; W 7,5 см». */
     public static function sizes(string $raw): array
     {
         $unit = preg_match('/\b(мм|см|м|mm|cm)\b/u', $raw, $u) ? $u[1] : 'см';
         $nums = preg_split('/\s*[хx×*]\s*/u', trim(preg_replace('/(мм|см|м|mm|cm)\.?/u', '', $raw)));
-        $nums = array_values(array_filter(array_map(fn ($n) => trim($n, " .;"), $nums), fn ($n) => preg_match('/^\d+([.,]\d+)?$/', $n)));
+        $nums = array_values(array_filter(array_map(fn ($n) => trim($n, ' .;'), $nums), fn ($n) => preg_match('/^\d+([.,]\d+)?$/', $n)));
         if (! $nums || count($nums) > 3) {
             return [$raw, 'Розміри «'.$raw.'» не розібрано'];
         }
@@ -275,10 +288,10 @@ class AdaptationService
 
             return sprintf('- %s: %s. %s%s', $r->target_field, $f?->label ?? $r->target_field, $r->comment ?? AdaptationRule::TRANSFORMS[$r->transform] ?? '', $dict);
         })->implode("\n");
-        $prompt = "Адаптуй документ старої архівної справи до полів Реєстру архівного фонду України.\n"
-            ."Мова реєстру — українська (поля *_uk), англійська (*_en), латиниця (*_la). Не вигадуй даних, яких немає в документі; "
+        $prompt = "Склади описову статтю архівного документа за полями схеми архівного опису (ISAD(G), рівень «документ»).\n"
+            .'Мова опису — українська; поля *_en — англійською. Не вигадуй даних, яких немає в документі; '
             ."якщо значення не можна визначити — поверни null і поясни в issues.\n\nПоля:\n".$spec
-            ."\n\nЗапис справи:\n".json_encode($src, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            ."\n\nДокумент справи:\n".json_encode($src, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         $schemaJson = [
             'type' => 'OBJECT',
             'properties' => [

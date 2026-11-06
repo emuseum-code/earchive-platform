@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 /** Синхронізація сховища з консолі та за розкладом (ТЗ 4.2). */
 class SyncStorage extends Command
 {
-    protected $signature = 'books:sync {path? : Папка відносно кореневої директорії} {--checksum : Рахувати SHA-256} {--scheduled}';
+    protected $signature = 'archive:sync {path? : Папка відносно кореневої директорії} {--checksum : Рахувати SHA-256} {--scheduled}';
 
     protected $description = 'Знайти нові, змінені й недоступні скани';
 

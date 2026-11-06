@@ -1,12 +1,11 @@
-# Deploys the inventory-book admin to the shared VPS on every push to main (and by hand from the Actions tab).
+# Deploys the archive-document admin to the shared VPS by hand (Actions → Deploy → Run workflow).
+# The VPS is shared: agree every deploy with the coordinator first, one project at a time.
 # Repository secrets (DEPLOY_HOST, DEPLOY_USER, DEPLOY_PORT and DOMAIN may also be repository variables):
-# DEPLOY_HOST, DEPLOY_USER (e.g. root), DEPLOY_SSH_KEY (private key, same as the museum portal), DOMAIN (books.emuseum.ua),
-# ADMIN_PASSWORD (password of the demo users *@books.test, seeds the database on the first deploy), optional GEMINI_API_KEY, DEPLOY_PORT.
+# DEPLOY_HOST, DEPLOY_USER (e.g. root), DEPLOY_SSH_KEY (private key, same as the museum portal), DOMAIN (archive.emuseum.ua),
+# ADMIN_PASSWORD (password of the demo users *@archive.test, seeds the database on the first deploy), optional GEMINI_API_KEY, DEPLOY_PORT.
 name: Deploy
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency: deploy
@@ -18,7 +17,7 @@ jobs:
       HOST: ${{ secrets.DEPLOY_HOST || vars.DEPLOY_HOST }}
       USER: ${{ secrets.DEPLOY_USER || vars.DEPLOY_USER || 'root' }}
       PORT: ${{ secrets.DEPLOY_PORT || vars.DEPLOY_PORT || '22' }}
-      DOMAIN: ${{ secrets.DOMAIN || vars.DOMAIN || 'books.emuseum.ua' }}
+      DOMAIN: ${{ secrets.DOMAIN || vars.DOMAIN || 'archive.emuseum.ua' }}
       HAS_KEY: ${{ secrets.DEPLOY_SSH_KEY != '' }}
     steps:
       - name: Check secrets
@@ -39,8 +38,8 @@ jobs:
       - name: Build image
         if: steps.check.outputs.go == '1'
         run: |
-          docker build -t books-app:latest ./admin
-          docker save books-app:latest | gzip -1 > /tmp/images.tar.gz
+          docker build -t archive-app:latest ./admin
+          docker save archive-app:latest | gzip -1 > /tmp/images.tar.gz
           ls -lh /tmp/images.tar.gz
 
       - name: SSH key
@@ -54,10 +53,10 @@ jobs:
       - name: Upload code
         if: steps.check.outputs.go == '1'
         run: |
-          ssh -o ServerAliveInterval=30 -i ~/.ssh/id_deploy -p "$PORT" "$USER@$HOST" 'mkdir -p /opt/books && command -v rsync >/dev/null || (apt-get update -qq && apt-get install -y -qq rsync)'
+          ssh -o ServerAliveInterval=30 -i ~/.ssh/id_deploy -p "$PORT" "$USER@$HOST" 'mkdir -p /opt/archive && command -v rsync >/dev/null || (apt-get update -qq && apt-get install -y -qq rsync)'
           rsync -az --delete -e "ssh -o ServerAliveInterval=30 -i ~/.ssh/id_deploy -p $PORT" \
             --exclude .git --exclude /.env --exclude admin/.env --exclude admin/vendor --exclude 'admin/database/*.sqlite' \
-            ./ "$USER@$HOST:/opt/books/"
+            ./ "$USER@$HOST:/opt/archive/"
 
       - name: Upload image
         if: steps.check.outputs.go == '1'
@@ -68,4 +67,4 @@ jobs:
         if: steps.check.outputs.go == '1'
         run: |
           ssh -o ServerAliveInterval=30 -i ~/.ssh/id_deploy -p "$PORT" "$USER@$HOST" \
-            "PREBUILT=1 DOMAIN='$DOMAIN' ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' GEMINI_API_KEY='${{ secrets.GEMINI_API_KEY }}' sh /opt/books/deploy/remote.sh"
+            "PREBUILT=1 DOMAIN='$DOMAIN' ADMIN_PASSWORD='${{ secrets.ADMIN_PASSWORD }}' GEMINI_API_KEY='${{ secrets.GEMINI_API_KEY }}' sh /opt/archive/deploy/remote.sh"

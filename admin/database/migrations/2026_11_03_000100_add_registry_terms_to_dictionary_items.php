@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Терміни тезаурусів РМФУ: англійська назва і позначка «має підпункти»; code = ID терміна в реєстрі. */
+/** Терміни довідників: англійська назва і позначка «має підпункти»; code = ID терміна в реєстрі. */
 return new class extends Migration
 {
     public function up(): void

@@ -40,6 +40,18 @@ class RecognitionService
             $parts = [['text' => $this->prompt($template, $prev)], GeminiClient::imagePart($scan->absolutePath())];
             $out = $this->gemini->generateJson('recognize', $parts, $this->schema($template), Settings::get('ai.model'), $job?->id, $job?->user_id);
         }
+
+        return $this->store($scan, $template, $out, $job, $started);
+    }
+
+    /**
+     * Зберегти відповідь моделі ($out: json, raw, model) і створити або оновити документи.
+     * Також використовується для демо-справи з готовим результатом.
+     */
+    public function store(Scan $scan, RecognitionTemplate $template, array $out, ?ProcessingJob $job = null, ?float $started = null): RecognitionResult
+    {
+        $book = $scan->book;
+        $started ??= microtime(true);
         [$parsed, $errors] = $this->validate($out['json'], $template);
 
         return DB::transaction(function () use ($scan, $book, $template, $job, $out, $parsed, $errors, $started) {
@@ -84,9 +96,10 @@ class RecognitionService
         foreach ($result->parsed['records'] ?? [] as $row) {
             $fields = $this->mapFields($row, $template);
             if (! empty($row['continuation']) && $prev = $this->previousRecord($scan)) {
-                RecordPage::firstOrCreate(['record_id' => $prev->id, 'scan_id' => $scan->id], [
+                $page = RecordPage::firstOrCreate(['record_id' => $prev->id, 'scan_id' => $scan->id], [
                     'position' => (int) $prev->pages()->max('position') + 1, 'is_continuation' => true, 'region' => $row['row_box'] ?? null,
                 ]);
+                $this->appendContinuation($prev, $fields['values'], $result, $job, $page->wasRecentlyCreated);
 
                 continue;
             }
@@ -124,6 +137,32 @@ class RecognitionService
         }
     }
 
+    /**
+     * Документ на кількох аркушах: текст наступної сторінки дописується в повний текст документа,
+     * порожні поля заповнюються. Документ із ручними правками чи перевірений — лише пропозиції.
+     */
+    private function appendContinuation(Record $record, array $values, RecognitionResult $result, ?ProcessingJob $job, bool $firstTime): void
+    {
+        $data = [];
+        foreach ($values as $f => $v) {
+            if ($f === 'full_text') {
+                if ($firstTime && ! str_contains((string) $record->full_text, $v)) {
+                    $data[$f] = trim($record->full_text."\n\n".$v);
+                }
+            } elseif ($record->$f === null || $record->$f === '') {
+                $data[$f] = $v;
+            }
+        }
+        if (! $data) {
+            return;
+        }
+        if ($record->has_manual_edits || $record->verification_status === VerificationStatus::Verified) {
+            $this->proposeChanges($record, $data, $result);
+        } else {
+            $record->applyChanges($data, VersionSource::Recognition, $job?->user, comment: 'Продовження документа на наступній сторінці');
+        }
+    }
+
     /** Зміни після повторного розпізнавання для документа з ручними правками — лише як пропозиції. */
     private function proposeChanges(Record $record, array $data, RecognitionResult $result): void
     {
@@ -147,14 +186,18 @@ class RecognitionService
         $record->update(['ai_check_status' => AiCheckStatus::Ready]);
     }
 
-    /** Автоматичне об’єднання за інвентарним номером заборонене; можливі дублікати лише позначаються (ТЗ 7). */
+    /** Автоматичне об’єднання за архівним шифром заборонене; можливі дублікати лише позначаються. */
     private function flagDuplicate(Record $record): void
     {
-        foreach (['inventory_number', 'account_number'] as $f) {
-            if (! $record->$f) {
-                continue;
-            }
-            $dups = Record::where('museum_id', $record->museum_id)->where($f, $record->$f)->whereKeyNot($record->id);
+        $checks = [];
+        if ($record->archive_code) {
+            $checks[] = ['archive_code' => $record->archive_code];
+        }
+        if ($record->doc_index && $record->doc_date) {
+            $checks[] = ['doc_index' => $record->doc_index, 'doc_date' => $record->doc_date];
+        }
+        foreach ($checks as $where) {
+            $dups = Record::where('museum_id', $record->museum_id)->where($where)->whereKeyNot($record->id);
             if ($dups->exists()) {
                 $dups->update(['possible_duplicate' => true]);
                 $record->update(['possible_duplicate' => true]);
@@ -173,7 +216,7 @@ class RecognitionService
     {
         $r = $this->previousRecord($scan);
 
-        return $r ? mb_substr(collect([$r->record_no, $r->inventory_number, $r->description ?? $r->title])->filter()->implode(' · '), 0, 600) : null;
+        return $r ? mb_substr(collect([$r->record_no, $r->doc_type, $r->title, $r->full_text ? '…'.mb_substr($r->full_text, -300) : null])->filter()->implode(' · '), 0, 600) : null;
     }
 
     private function mapFields(array $row, RecognitionTemplate $template): array
@@ -211,17 +254,25 @@ class RecognitionService
 
     public function prompt(RecognitionTemplate $t, ?string $prevTail = null): string
     {
-        $cols = collect($t->columns)->map(fn ($c, $i) => sprintf('- "%s": графа %s «%s»', $c['key'], $c['column_no'] ?? $i + 1, $c['label']))->implode("\n");
+        $cols = collect($t->columns)->map(fn ($c, $i) => sprintf('- "%s": поле %s «%s»', $c['key'], $c['column_no'] ?? $i + 1, $c['label']))->implode("\n");
 
-        return trim($t->prompt)."\n\nГрафи справи (ключі для поля values):\n".$cols."\n\n".<<<'TXT'
+        return trim($t->prompt)."\n\nПоля опису документа (ключі для поля values):\n".$cols."\n\n".<<<'TXT'
 Правила:
-- Один елемент records = один документ справи (рядок таблиці), а не сторінка.
-- Переписуй текст дослівно, мовою оригіналу, зберігаючи скорочення. Нічого не перекладай і не доповнюй.
-- Відсутнє значення не заповнюй. Нерозбірливий чи неоднозначний фрагмент залиш як прочитано і додай у uncertain з причиною.
-- «— // —», «—"—», «тж» тощо повтори як є; не підставляй значення з рядка вище.
-- Якщо перший рядок сторінки продовжує документ з попередньої сторінки, постав continuation=true.
-- Текст, що не належить до жодної графи (печатки, підписи, нотатки на полях), поклади в extra з назвою.
-- regions: рамки полів у координатах 0–1000 [ymin, xmin, ymax, xmax]; row_box — рамка всього документа.
+- Один елемент records = один архівний документ (лист, наказ, протокол, довідка, анкета тощо), а не сторінка.
+  На сторінці може бути кілька документів або частина документа.
+- Повний текст переписуй дослівно, мовою й правописом оригіналу (дореформений, російська, польська, німецька — як є),
+  зберігаючи скорочення й абзаци. Нічого не перекладай, не осучаснюй і не доповнюй.
+- Описові поля (вид, заголовок, короткий зміст, автор, адресат, особи, географічні назви, установи) заповнюй українською
+  за змістом документа; власні назви — як у документі. Заголовок формулюй за архівними правилами: вид документа, автор,
+  адресат, короткий зміст (наприклад: «Лист Київської губернської управи до … про …»).
+- Дати — як у документі; якщо дата за старим стилем, так і залиш.
+- Особи, географічні назви, установи — через «; ».
+- Відсутнє значення не заповнюй. Нерозбірливий чи неоднозначний фрагмент залиш як прочитано, у тексті познач […],
+  і додай поле в uncertain з причиною.
+- Якщо сторінка починається з продовження документа з попередньої сторінки, перший елемент records — це продовження:
+  постав continuation=true і поклади в full_text лише текст цієї сторінки.
+- Резолюції, печатки, штампи, підписи, позначки на полях — у поле приміток, якщо воно є, інакше в extra з назвою.
+- regions: рамки полів у координатах 0–1000 [ymin, xmin, ymax, xmax]; row_box — рамка документа (його частини) на сторінці.
 TXT
             .($prevTail ? "\n\nОстанній документ попередньої сторінки: ".$prevTail : '');
     }

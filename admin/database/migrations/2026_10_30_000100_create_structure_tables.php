@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('short_name')->nullable();
             $table->string('edrpou', 12)->nullable();
-            $table->string('rmfu_id')->nullable()->comment('Ідентифікатор архіву в РМФУ');
+            $table->string('rmfu_id')->nullable()->comment('Код архіву (зовнішній ідентифікатор)');
             $table->string('folder_path', 1024)->nullable()->unique();
             $table->string('contact_person')->nullable();
             $table->string('contact_email')->nullable();
@@ -35,7 +35,7 @@ return new class extends Migration
         Schema::create('funds', function (Blueprint $table) {
             $table->id();
             $table->foreignId('museum_id')->constrained()->cascadeOnDelete();
-            $table->string('name')->comment('Напрям обліку або фонд');
+            $table->string('name')->comment('Фонд');
             $table->string('code', 50)->nullable();
             $table->string('folder_path', 1024)->nullable()->unique();
             $table->timestamps();
@@ -64,7 +64,8 @@ return new class extends Migration
             $table->foreignId('recognition_template_id')->nullable()->constrained()->nullOnDelete();
             $table->string('title');
             $table->string('book_type', 20)->default('mixed');
-            $table->string('book_number', 50)->nullable();
+            $table->string('inventory_no', 50)->nullable()->comment('Номер опису');
+            $table->string('book_number', 50)->nullable()->comment('Номер справи');
             $table->string('years', 50)->nullable()->comment('Роки ведення справи');
             $table->string('language', 30)->nullable();
             $table->string('folder_path', 1024)->nullable()->unique();

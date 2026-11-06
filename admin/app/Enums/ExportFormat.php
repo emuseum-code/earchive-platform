@@ -22,7 +22,7 @@ enum ExportFormat: string implements HasColor, HasLabel
             self::Csv => 'CSV',
             self::Xlsx => 'XLSX',
             self::Json => 'JSON',
-            self::Registry => 'Шаблон імпорту РМФУ (XLSX)',
+            self::Registry => 'Архівний опис ISAD(G) (XLSX)',
             self::Api => 'API реєстру',
         };
     }

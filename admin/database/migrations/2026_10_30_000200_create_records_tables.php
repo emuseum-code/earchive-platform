@@ -78,29 +78,30 @@ return new class extends Migration
             $table->foreignId('fund_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('recognition_result_id')->nullable()->constrained()->nullOnDelete();
             $table->unsignedInteger('sequence')->default(0)->comment('Порядок документа в справі');
-            // Ідентифікація
-            $table->string('record_no', 50)->nullable()->index()->comment('№ по порядку');
-            $table->string('record_date', 100)->nullable()->comment('Дата документа');
-            $table->string('account_number', 100)->nullable()->index()->comment('Обліковий номер (КП)');
-            $table->string('inventory_number', 100)->nullable()->index()->comment('Інвентарний номер / шифр');
-            // Предмет
-            $table->text('title')->nullable();
-            $table->text('description')->nullable();
-            $table->string('quantity', 50)->nullable();
-            $table->text('material')->nullable();
-            $table->text('technique')->nullable();
-            $table->string('dimensions')->nullable();
-            $table->string('dating')->nullable();
-            $table->string('author')->nullable();
-            // Надходження та інше
-            $table->string('acquisition_date', 100)->nullable();
-            $table->text('acquisition_source')->nullable();
-            $table->text('provenance')->nullable();
-            $table->string('condition')->nullable();
-            $table->string('price')->nullable()->comment('Вартість');
-            $table->string('department')->nullable()->comment('Відділ або збірка');
-            $table->text('location')->nullable()->comment('Місцезнаходження / топографія');
-            $table->text('notes')->nullable();
+            // Ідентифікація (внутрішній опис документів справи)
+            $table->string('record_no', 50)->nullable()->index()->comment('№ документа у справі');
+            $table->string('doc_index', 100)->nullable()->index()->comment('Індекс / реєстраційний номер документа');
+            $table->string('doc_date', 100)->nullable()->comment('Дата документа, як у документі');
+            $table->string('sheets', 50)->nullable()->comment('Аркуші справи, напр. 12–14 зв.');
+            $table->string('archive_code', 150)->nullable()->index()->comment('Архівний шифр: ф. оп. спр. арк.');
+            // Документ
+            $table->string('doc_type', 150)->nullable()->comment('Вид документа');
+            $table->text('title')->nullable()->comment('Заголовок');
+            $table->text('description')->nullable()->comment('Короткий зміст (анотація)');
+            $table->text('author')->nullable()->comment('Автор: установа або особа');
+            $table->text('addressee')->nullable();
+            $table->string('place')->nullable()->comment('Місце складання');
+            $table->string('language', 100)->nullable();
+            $table->string('authenticity', 100)->nullable()->comment('Оригінал, копія, чернетка');
+            $table->string('reproduction', 100)->nullable()->comment('Рукопис, машинопис, друк');
+            // Зміст
+            $table->text('persons')->nullable()->comment('Згадані особи');
+            $table->text('places')->nullable()->comment('Географічні назви');
+            $table->text('organizations')->nullable()->comment('Установи й організації');
+            $table->longText('full_text')->nullable()->comment('Повний текст (транскрипція)');
+            // Стан та інше
+            $table->string('condition')->nullable()->comment('Фізичний стан');
+            $table->text('notes')->nullable()->comment('Резолюції, печатки, позначки, примітки');
             // Дані, що не лягли в основні поля, з назвами граф справи (ТЗ 6.2)
             $table->json('extra_fields')->nullable();
             // Нерозбірливі / неоднозначні поля: {field: "причина"}

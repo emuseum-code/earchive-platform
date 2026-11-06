@@ -2,9 +2,12 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Pages\MuseumDesk;
 use App\Filament\Resources\MuseumResource\Pages;
 use App\Filament\Resources\MuseumResource\RelationManagers\FundsRelationManager;
 use App\Filament\Support\Access;
+use App\Filament\Support\Ai;
+use App\Models\Book;
 use App\Models\Museum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -60,7 +63,7 @@ class MuseumResource extends Resource
                 Select::make('territory_id')->label('Територія')->relationship('territory', 'name')->searchable()->preload()
                     ->createOptionForm([TextInput::make('name')->label('Назва')->required()]),
                 TextInput::make('edrpou')->label('Код ЄДРПОУ')->maxLength(12),
-                TextInput::make('rmfu_id')->label('Ідентифікатор у РМФУ'),
+                TextInput::make('rmfu_id')->label('Код архіву'),
                 TextInput::make('folder_path')->label('Папка у сховищі')->helperText('Відносно кореневої директорії. Заповнюється синхронізацією.')->columnSpan(2),
                 TextInput::make('contact_person')->label('Відповідальна особа'),
                 TextInput::make('contact_email')->label('Пошта')->email(),
@@ -83,14 +86,14 @@ class MuseumResource extends Resource
                 TextColumn::make('folder_path')->label('Папка')->toggleable(isToggledHiddenByDefault: true)->fontFamily('mono')->size('xs'),
             ])
             ->filters([SelectFilter::make('territory_id')->label('Територія')->relationship('territory', 'name')])
-            ->recordUrl(fn (Museum $r) => \App\Filament\Pages\MuseumDesk::getUrl(['museum' => $r->id]))
+            ->recordUrl(fn (Museum $r) => MuseumDesk::getUrl(['museum' => $r->id]))
             ->recordActions([
                 // ТЗ 6.1: запуск розпізнавання для цілого архіву (нові, помилкові й змінені сторінки всіх його справ)
-                \App\Filament\Support\Ai::button(Action::make('recognize')->label('Розпізнати справи'))
+                Ai::button(Action::make('recognize')->label('Розпізнати справи'))
                     ->visible(fn () => auth()->user()->canOperate())
                     ->requiresConfirmation()->modalHeading(fn (Museum $record) => 'Розпізнати всі справи: '.$record->name)
                     ->modalDescription('У чергу підуть нерозпізнані, помилкові та змінені сторінки всіх доступних вам справ архіву. Уже розпізнані сторінки не повторюються.')
-                    ->action(fn (Museum $record) => BookResource::recognize(\App\Models\Book::visibleTo(auth()->user())->where('museum_id', $record->id)->get())),
+                    ->action(fn (Museum $record) => BookResource::recognize(Book::visibleTo(auth()->user())->where('museum_id', $record->id)->get())),
                 EditAction::make()->label(''),
             ]);
     }

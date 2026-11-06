@@ -8,144 +8,117 @@ use App\Models\RegistrySchema;
 use Illuminate\Database\Seeder;
 
 /**
- * Шаблон міграції даних РМФУ (42 поля з аркуша «Адаптація для РМФУ»), довідники
- * та таблиця відповідностей граф інвентарної книги полям реєстру.
+ * Схема архівного опису документа (описова стаття рівня «документ» за ISAD(G) і правилами
+ * роботи архівних установ), довідники та таблиця відповідностей полів документа полям опису.
  */
 class RegistrySeeder extends Seeder
 {
-    /** key => [тип, обов’язкове для готовності, довідник] у порядку колонок шаблону */
+    /** key => [назва, тип, обов’язкове для готовності, довідник] у порядку колонок експорту */
     public const FIELDS = [
-        'uid' => ['string', false, null],
-        'name_uk' => ['text', true, null],
-        'name_en' => ['text', false, null],
-        'description_uk' => ['text', true, null],
-        'description_en' => ['text', false, null],
-        'author_person' => ['string', false, null],
-        'author_org' => ['string', false, null],
-        'classification' => ['dictionary', true, 'classification'],
-        'num_inventory' => ['string', true, null],
-        'num_inventory_date' => ['date', false, null],
-        'num_primary_of' => ['string', false, null],
-        'num_primary_of_date' => ['date', false, null],
-        'num_special' => ['string', false, null],
-        'num_special_date' => ['date', false, null],
-        'num_primary_ndf' => ['string', false, null],
-        'num_primary_ndf_date' => ['date', false, null],
-        'created_place_uk' => ['string', false, null],
-        'created_place_la' => ['string', false, null],
-        'created_date' => ['date', false, null],
-        'created_year_from' => ['year', false, null],
-        'created_year_to' => ['year', false, null],
-        'found_place_uk' => ['string', false, null],
-        'found_place_la' => ['string', false, null],
-        'found_date' => ['date', false, null],
-        'found_year_from' => ['year', false, null],
-        'found_year_to' => ['year', false, null],
-        'used_place_uk' => ['string', false, null],
-        'used_place_la' => ['string', false, null],
-        'used_date' => ['string', false, null],
-        'used_year_from' => ['year', false, null],
-        'used_year_to' => ['year', false, null],
-        'sizes' => ['string', true, null],
-        'composition' => ['string', true, null],
-        'condition' => ['string', true, null],
-        'condition_date' => ['date', false, null],
-        'acquisition_method' => ['dictionary', true, 'acquisition_method'],
-        'acquisition_source' => ['text', false, null],
-        'price_purchase' => ['money', false, null],
-        'price_estimated' => ['money', false, null],
-        'price_insurance' => ['money', false, null],
-        'is_transportable' => ['bool', false, null],
-        'topography_code' => ['string', false, null],
+        'reference_code' => ['Архівний шифр', 'string', true, null],
+        'level' => ['Рівень опису', 'string', false, null],
+        'title' => ['Заголовок', 'text', true, null],
+        'title_en' => ['Заголовок англійською', 'text', false, null],
+        'doc_type' => ['Вид документа', 'dictionary', true, 'doc_type'],
+        'date' => ['Дата документа', 'date', false, null],
+        'year_from' => ['Рік «З»', 'year', true, null],
+        'year_to' => ['Рік «До»', 'year', false, null],
+        'creator' => ['Автор (фондоутворювач, установа, особа)', 'text', true, null],
+        'addressee' => ['Адресат', 'text', false, null],
+        'place' => ['Місце складання', 'string', false, null],
+        'scope_content' => ['Короткий зміст', 'text', true, null],
+        'extent' => ['Аркуші', 'string', false, null],
+        'language' => ['Мова', 'dictionary', true, 'language'],
+        'authenticity' => ['Справжність', 'dictionary', false, 'authenticity'],
+        'reproduction' => ['Спосіб відтворення', 'dictionary', false, 'reproduction'],
+        'persons' => ['Особи', 'text', false, null],
+        'places' => ['Географічні назви', 'text', false, null],
+        'organizations' => ['Установи й організації', 'text', false, null],
+        'physical_condition' => ['Фізичний стан', 'dictionary', false, 'condition'],
+        'notes' => ['Примітки', 'text', false, null],
+        'full_text' => ['Повний текст', 'text', false, null],
     ];
 
-    public function run(array $headers = []): RegistrySchema
+    public function run(): RegistrySchema
     {
         $dicts = [
-            'condition' => ['Стан збереження', [
-                ['Добрий (без пошкоджень)', ['хорошее', 'хороший', 'добрий', 'отличное']],
-                ['Задовільний', ['удовлетворит', 'удовлетворительное', 'задовільний']],
-                ['Потребує реставрації', ['требует реставрации', 'обложка оторвана']],
-                ['Незадовільний', ['плохое', 'ветхое', 'поганий']],
+            'doc_type' => ['Види документів', [
+                ['Наказ', ['приказ']], ['Розпорядження', ['распоряжение']], ['Постанова', ['постановление']], ['Рішення', ['решение']],
+                ['Протокол', []], ['Лист', ['письмо', 'отношение', 'відношення']], ['Доповідна записка', ['докладная записка']],
+                ['Службова записка', []], ['Заява', ['заявление', 'прошение', 'прохання']], ['Довідка', ['справка']], ['Звіт', ['отчет', 'отчёт']],
+                ['Акт', []], ['Анкета', []], ['Автобіографія', ['автобиография']], ['Характеристика', []], ['Посвідчення', ['удостоверение']],
+                ['Список', ['перелік']], ['Відомість', ['ведомость']], ['Телеграма', ['телеграмма']], ['Інструкція', ['инструкция']],
+                ['Кошторис', ['смета']], ['Договір', ['договор']], ['Метрична книга, запис', ['метрическая запись']], ['Інше', []],
             ]],
-            // заповнюються з тезаурусів РМФУ командою books:thesauri (наприкінці run())
-            'acquisition_method' => ['Спосіб надходження', []],
-            'classification' => ['Класифікація', []],
-            'material' => ['Матеріали', []],
-            'technique' => ['Техніки виконання', []],
+            'language' => ['Мови документів', [
+                ['українська', ['укр', 'украинский']], ['російська', ['рос', 'русский']], ['польська', ['польский']], ['німецька', ['немецкий']],
+                ['їдиш', ['идиш']], ['латинська', ['латынь']], ['французька', []], ['англійська', []],
+            ]],
+            'authenticity' => ['Справжність', [
+                ['Оригінал', ['подлинник', 'справжній']], ['Копія', ['копия']], ['Засвідчена копія', ['заверенная копия']], ['Чернетка', ['черновик', 'проєкт']], ['Витяг', ['выписка']],
+            ]],
+            'reproduction' => ['Спосіб відтворення', [
+                ['Рукопис', ['рукописный', 'рукописний']], ['Машинопис', ['машинописный', 'машинописний']], ['Друк', ['типографский', 'друкований']],
+                ['Рукопис і машинопис', []], ['Бланк, заповнений від руки', []], ['Склографія', ['стеклограф']],
+            ]],
+            'condition' => ['Фізичний стан', [
+                ['Добрий', ['хороший', 'добрий', 'задовільний без пошкоджень']], ['Задовільний', ['удовлетворительный']],
+                ['Згасання тексту', ['угасание текста', 'згасання']], ['Пошкоджений', ['пошкоджено', 'надриви', 'розриви']], ['Потребує реставрації', []],
+            ]],
         ];
         $dictIds = [];
         foreach ($dicts as $code => [$name, $items]) {
-            $d = Dictionary::updateOrCreate(['code' => $code], ['name' => $name, 'version' => '2026-10', 'description' => 'Демо-набір; замінюється довідниками реєстру від Замовника.']);
+            $d = Dictionary::updateOrCreate(['code' => $code], ['name' => $name, 'version' => '2026-11', 'description' => 'Базовий набір; доповнюється в адмінці.']);
             foreach ($items as $i => [$value, $syn]) {
                 $d->items()->updateOrCreate(['value' => $value], ['synonyms' => $syn, 'sort' => $i]);
             }
             $dictIds[$code] = $d->id;
         }
 
-        $schema = RegistrySchema::updateOrCreate(['name' => 'Шаблон міграції даних РМФУ', 'version' => '2026-10'], [
+        $schema = RegistrySchema::updateOrCreate(['name' => 'Описова стаття документа (ISAD(G))', 'version' => '2026-11'], [
             'is_active' => true,
-            'description' => '42 поля з аркуша «Адаптація для РМФУ». Остаточна схема — за документацією реєстру від Замовника.',
+            'description' => 'Опис архівного документа: шифр, заголовок, дата, автор, зміст, мова, справжність, покажчики. Склад полів погоджується з архівом.',
         ]);
         $letters = fn (int $i) => ($i >= 26 ? chr(64 + intdiv($i, 26)) : '').chr(65 + $i % 26);
         $i = 0;
-        foreach (self::FIELDS as $key => [$type, $required, $dict]) {
-            $h = $headers[$i] ?? $key;
-            preg_match('/\(([^)]*)\)\s*$/u', $h, $m);
+        foreach (self::FIELDS as $key => [$label, $type, $required, $dict]) {
             $schema->fields()->updateOrCreate(['key' => $key], [
-                'label' => trim(preg_replace('/\s*\([^)]*\)\s*$/u', '', ltrim($h, '*'))),
-                'api_path' => $m[1] ?? null,
-                'type' => $type,
-                'required' => $required,
-                'dictionary_id' => $dict ? $dictIds[$dict] : null,
-                'sort' => $i,
-                'column_letter' => $letters($i),
-                'hint' => str_starts_with($h, '*') && ! $required ? 'У шаблоні позначено *; обов’язковість залежить від типу обліку предмета.' : null,
+                'label' => $label, 'api_path' => $key, 'type' => $type, 'required' => $required,
+                'dictionary_id' => $dict ? $dictIds[$dict] : null, 'sort' => $i, 'column_letter' => $letters($i),
             ]);
             $i++;
         }
 
-        // Таблиця відповідностей граф книги → поля РМФУ (за звітом про адаптацію)
+        // Таблиця відповідностей: поле документа → поле опису
         $rules = [
-            ['uid', ['record_no'], 'regex', ['pattern' => '^(\d+[а-яa-z]?)'], false, null],
-            ['name_uk', ['title', 'description'], 'title', null, true, 'Коротка інвентарна назва предмета українською: тип документа, назва, власник; без опису зовнішнього вигляду.'],
-            ['name_en', ['title', 'description'], 'translate_en', null, true, 'Назва англійською.'],
-            ['description_uk', ['description'], 'translate', null, true, 'Повний опис українською, дослівно за змістом, з датами.'],
-            ['description_en', ['description'], 'translate_en', null, true, 'Короткий опис зовнішнього вигляду англійською.'],
-            ['author_person', ['description'], 'ai', null, true, 'Автор — фізична особа, якщо зазначено.'],
-            ['author_org', ['description'], 'ai', null, true, 'Установа-емітент документа (товариство, університет, курси…).'],
-            ['classification', ['description', 'inventory_number', 'department'], 'dictionary', ['dictionary' => 'classification'], true, 'Шифр «Д» — документальний фонд; кілька значень через «; ».'],
-            ['num_inventory', ['department', 'inventory_number'], 'regex', ['pattern' => '(Д[0-9]?-?[IVXІ]*-?\d+)'], false, null],
-            ['num_inventory_date', ['record_date'], 'date', null, false, null],
-            ['num_primary_of', ['department', 'inventory_number'], 'regex', ['pattern' => '(КП[0-9\-]*-?\d+)'], false, null],
-            ['num_primary_of_date', ['acquisition_source'], 'date', null, false, null],
-            ['created_place_uk', ['description'], 'ai', null, true, 'Місце створення предмета українською (країна, місто).'],
-            ['created_place_la', ['description'], 'ai', null, true, 'Те саме латиницею.'],
-            ['created_date', ['description'], 'ai', null, true, 'Точна дата видачі/створення РРРР-ММ-ДД, якщо є в описі.'],
-            ['created_year_from', ['description'], 'ai', null, true, 'Рік створення «З».'],
-            ['created_year_to', ['description'], 'ai', null, true, 'Рік створення «До».'],
-            ['used_place_uk', ['description'], 'ai', null, true, 'Місце побутування з біографічних відомостей.'],
-            ['used_place_la', ['description'], 'ai', null, true, 'Те саме латиницею.'],
-            ['used_date', ['description'], 'ai', null, true, 'Період побутування «РРРР–РРРР».'],
-            ['used_year_from', ['description'], 'ai', null, true, null],
-            ['used_year_to', ['description'], 'ai', null, true, null],
-            ['sizes', ['dimensions'], 'sizes', null, false, null],
-            ['composition', ['material', 'description'], 'ai', ['dictionaries' => ['material', 'technique']], true, \App\Console\Commands\ImportThesauri::COMPOSITION],
-            ['condition', ['condition'], 'dictionary', ['dictionary' => 'condition'], false, null],
-            ['condition_date', ['record_date'], 'date', null, false, null],
-            ['acquisition_method', ['acquisition_source'], 'dictionary', ['dictionary' => 'acquisition_method'], true, 'Спосіб надходження за довідником.'],
-            ['acquisition_source', ['acquisition_source'], 'translate', null, true, 'Реквізити акта, дарувальник українською.'],
-            ['price_purchase', ['price'], 'money', null, false, null],
-            ['topography_code', ['location'], 'copy', null, false, null],
+            ['reference_code', ['archive_code'], 'copy', null, false, null],
+            ['level', [], 'constant', ['value' => 'Документ'], false, null],
+            ['title', ['title'], 'copy', null, false, null],
+            ['title_en', ['title'], 'translate_en', null, true, 'Заголовок англійською.'],
+            ['doc_type', ['doc_type'], 'dictionary', ['dictionary' => 'doc_type'], false, null],
+            ['date', ['doc_date'], 'date', null, false, null],
+            ['year_from', ['doc_date'], 'year_from', null, false, null],
+            ['year_to', ['doc_date'], 'year_to', null, false, null],
+            ['creator', ['author'], 'copy', null, false, null],
+            ['addressee', ['addressee'], 'copy', null, false, null],
+            ['place', ['place'], 'copy', null, false, null],
+            ['scope_content', ['description'], 'copy', null, false, null],
+            ['extent', ['sheets'], 'copy', null, false, null],
+            ['language', ['language'], 'dictionary', ['dictionary' => 'language'], false, null],
+            ['authenticity', ['authenticity'], 'dictionary', ['dictionary' => 'authenticity'], false, null],
+            ['reproduction', ['reproduction'], 'dictionary', ['dictionary' => 'reproduction'], false, null],
+            ['persons', ['persons'], 'copy', null, false, null],
+            ['places', ['places'], 'copy', null, false, null],
+            ['organizations', ['organizations'], 'copy', null, false, null],
+            ['physical_condition', ['condition'], 'dictionary', ['dictionary' => 'condition'], false, null],
+            ['notes', ['notes'], 'copy', null, false, null],
+            ['full_text', ['full_text'], 'copy', null, false, null],
         ];
         foreach ($rules as $sort => [$target, $src, $transform, $params, $ai, $comment]) {
             AdaptationRule::updateOrCreate(['registry_schema_id' => $schema->id, 'target_field' => $target], [
                 'source_fields' => $src, 'transform' => $transform, 'params' => $params, 'use_ai' => $ai, 'sort' => $sort, 'comment' => $comment,
             ]);
         }
-
-        // класифікації, матеріали, техніки й способи надходження — з тезаурусів РМФУ
-        \Illuminate\Support\Facades\Artisan::call('books:thesauri');
 
         return $schema;
     }

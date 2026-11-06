@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 /** Облікова справа архіву (ТЗ 4.1). */
 class Book extends Model
@@ -32,7 +33,7 @@ class Book extends Model
         static::updated(function (self $book) {
             if ($book->wasChanged(['fund_id', 'museum_id'])) {
                 // без updated_at і версії документа: змінюється лише прив’язка, не дані звірки
-                \Illuminate\Support\Facades\DB::table('records')->where('book_id', $book->id)
+                DB::table('records')->where('book_id', $book->id)
                     ->update(['fund_id' => $book->fund_id, 'museum_id' => $book->museum_id]);
             }
         });
@@ -98,6 +99,18 @@ class Book extends Model
             'records_verified' => (int) $records->verified,
             'records_adapted' => (int) $records->adapted,
         ])->saveQuietly();
+    }
+
+    /** Архівний шифр справи: «Ф. Р-1, оп. 2, спр. 15». */
+    public function archiveCode(): ?string
+    {
+        $parts = array_filter([
+            $this->fund?->code ? 'Ф. '.$this->fund->code : null,
+            $this->inventory_no ? 'оп. '.$this->inventory_no : null,
+            $this->book_number ? 'спр. '.$this->book_number : null,
+        ]);
+
+        return $parts ? implode(', ', $parts) : null;
     }
 
     public function recognitionProgress(): int

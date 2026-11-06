@@ -5,18 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/** Рядок таблиці відповідностей поле справи → поле реєстру (ТЗ 9). */
+/** Рядок таблиці відповідностей поле документа → поле архівного опису (ТЗ 9). */
 class AdaptationRule extends Model
 {
     public const TRANSFORMS = [
         'copy' => 'Перенести як є',
         'translate' => 'Переклад українською (Gemini AI)',
         'translate_en' => 'Переклад англійською (Gemini AI)',
-        'title' => 'Коротка інвентарна назва з опису',
+        'title' => 'Заголовок документа за архівними правилами',
         'date' => 'Нормалізувати дату (РРРР-ММ-ДД)',
         'year_from' => 'Рік «З»',
         'year_to' => 'Рік «До»',
-        'sizes' => 'Розміри у форматі РМФУ (H …; W …)',
+        'sizes' => 'Розміри (H …; W …)',
         'dictionary' => 'Зіставити з довідником',
         'number' => 'Число',
         'money' => 'Грошова сума, грн',

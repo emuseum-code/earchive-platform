@@ -9,6 +9,7 @@ use App\Models\Export;
 use App\Models\Record;
 use App\Models\RegistrySchema;
 use App\Support\Activity;
+use App\Support\Tz;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 use OpenSpout\Common\Entity\Row;
@@ -17,7 +18,7 @@ use OpenSpout\Writer\CSV\Writer as CsvWriter;
 use OpenSpout\Writer\XLSX\Writer as XlsxWriter;
 
 /**
- * Експорт вибраних або відфільтрованих документів у CSV, XLSX, JSON і шаблон імпорту РМФУ (ТЗ 11).
+ * Експорт вибраних або відфільтрованих документів у CSV, XLSX, JSON і шаблон архівного опису (ТЗ 11).
  * Фіксує користувача, час, склад і версії документів. Створений файл — не підтвердження приймання реєстром.
  */
 class ExportService
@@ -37,7 +38,7 @@ class ExportService
         }
         if (! empty($f['search'])) {
             $s = '%'.$f['search'].'%';
-            $q->where(fn ($w) => $w->where('title', 'like', $s)->orWhere('description', 'like', $s)->orWhere('inventory_number', 'like', $s)->orWhere('account_number', 'like', $s));
+            $q->where(fn ($w) => $w->where('title', 'like', $s)->orWhere('description', 'like', $s)->orWhere('archive_code', 'like', $s)->orWhere('doc_index', 'like', $s)->orWhere('full_text', 'like', $s));
         }
 
         return $q->orderBy('book_id')->orderBy('sequence');
@@ -59,7 +60,9 @@ class ExportService
                 }
             }
             [$header, $rows] = $registry ? $this->registryRows($records, $schema) : $this->sourceRows($records);
-            $ext = match ($export->format) { ExportFormat::Csv => 'csv', ExportFormat::Json => 'json', default => 'xlsx' };
+            $ext = match ($export->format) {
+                ExportFormat::Csv => 'csv', ExportFormat::Json => 'json', default => 'xlsx'
+            };
             $path = 'exports/'.now()->format('Y/m').'/'.($registry ? 'rmfu' : 'records').'-'.now()->format('Ymd-His').'-'.substr($export->uid, 0, 8).'.'.$ext;
             $abs = Storage::disk('local')->path($path);
             @mkdir(dirname($abs), 0775, true);
@@ -109,13 +112,13 @@ class ExportService
             [$r->uid, $r->museum?->name, $r->fund?->name, $r->book?->title, $r->pageLabel()],
             array_map(fn ($f) => $r->$f, array_keys(Record::FIELDS)),
             [$r->extra_fields ? json_encode($r->extra_fields, JSON_UNESCAPED_UNICODE) : null, $r->verification_status->getLabel(),
-                $r->adaptation_status->getLabel(), $r->lock_version, $r->verifier?->name, \App\Support\Tz::fmt($r->verified_at, 'Y-m-d H:i')]
+                $r->adaptation_status->getLabel(), $r->lock_version, $r->verifier?->name, Tz::fmt($r->verified_at, 'Y-m-d H:i')]
         ))->all();
 
         return [$header, $rows];
     }
 
-    /** Колонки в порядку шаблону міграції даних РМФУ. */
+    /** Колонки в порядку схеми архівного опису. */
     private function registryRows($records, RegistrySchema $schema): array
     {
         $fields = $schema->fields;

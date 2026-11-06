@@ -1,6 +1,0 @@
-# Site block for the Caddy of the museum portal (/opt/mincult): remote.sh copies it to /opt/caddy-sites/books.caddy,
-# with BOOKS_DOMAIN replaced by DOMAIN. Caddy gets the Let's Encrypt certificate itself.
-BOOKS_DOMAIN {
-	encode zstd gzip
-	reverse_proxy books-web:80
-}

@@ -9,12 +9,15 @@ use App\Enums\JobType;
 use App\Enums\VerificationStatus;
 use App\Filament\Resources\RecordResource\Pages;
 use App\Filament\Support\Access;
+use App\Filament\Support\Ai;
 use App\Models\Book;
 use App\Models\Export;
 use App\Models\Fund;
 use App\Models\Museum;
 use App\Models\Record;
 use App\Services\QueueManager;
+use App\Support\Tz;
+use Carbon\Carbon;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\ViewAction;
@@ -38,6 +41,9 @@ use Filament\Tables\Grouping\Group;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /** Єдина таблиця розпізнаних даних: один рядок — один документ справи (ТЗ 7). */
 class RecordResource extends Resource
@@ -87,33 +93,33 @@ class RecordResource extends Resource
      */
     public static function pageSubquery(): \Illuminate\Database\Query\Builder
     {
-        $page = \Illuminate\Support\Facades\DB::connection()->getDriverName() === 'pgsql'
+        $page = DB::connection()->getDriverName() === 'pgsql'
             ? "coalesce(nullif(substring(scans.page_label from '[0-9]+'), '')::int, scans.page_order)"
             : 'scans.page_order';
 
-        return \Illuminate\Support\Facades\DB::table('record_pages')->join('scans', 'scans.id', '=', 'record_pages.scan_id')
+        return DB::table('record_pages')->join('scans', 'scans.id', '=', 'record_pages.scan_id')
             ->whereColumn('record_pages.record_id', 'records.id')->selectRaw("min({$page})");
     }
 
-    // Пошук у верхньому рядку (ТЗ 18.4): за номером документа, обліковим та інвентарним номером, назвою
+    // Пошук у верхньому рядку: за номером документа, індексом, архівним шифром, заголовком
     protected static ?string $recordTitleAttribute = 'record_no';
 
     public static function getGloballySearchableAttributes(): array
     {
-        return ['record_no', 'account_number', 'inventory_number', 'title'];
+        return ['record_no', 'doc_index', 'archive_code', 'title'];
     }
 
-    public static function getGlobalSearchResultTitle(\Illuminate\Database\Eloquent\Model $record): string
+    public static function getGlobalSearchResultTitle(Model $record): string
     {
-        return 'Документ № '.$record->record_no.($record->title ? ' · '.\Illuminate\Support\Str::limit($record->title, 60) : '');
+        return 'Документ № '.$record->record_no.($record->title ? ' · '.Str::limit($record->title, 60) : '');
     }
 
-    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    public static function getGlobalSearchResultDetails(Model $record): array
     {
-        return array_filter(['Справа' => $record->book?->title, 'Інв. №' => $record->inventory_number, 'Звірка' => $record->verification_status?->getLabel()]);
+        return array_filter(['Справа' => $record->book?->title, 'Шифр' => $record->archive_code, 'Звірка' => $record->verification_status?->getLabel()]);
     }
 
-    public static function getGlobalSearchResultUrl(\Illuminate\Database\Eloquent\Model $record): string
+    public static function getGlobalSearchResultUrl(Model $record): string
     {
         return static::getUrl('view', ['record' => $record]);
     }
@@ -136,18 +142,21 @@ class RecordResource extends Resource
 
         return $schema->components([
             ...$groups->map(fn ($fields, $group) => Section::make($group)->columnSpanFull()->schema([Grid::make(3)->schema(
-                collect($fields)->map(fn ($f, $key) => in_array($key, ['description', 'title', 'acquisition_source', 'provenance', 'notes', 'material', 'location'], true)
-                    ? Textarea::make($key)->label($f[0])->rows($key === 'description' ? 5 : 2)->columnSpan($key === 'description' ? 3 : 1)
+                collect($fields)->map(fn ($f, $key) => in_array($key, Record::LONG, true)
+                    ? Textarea::make($key)->label($f[0])->rows(match ($key) {
+                        'full_text' => 12, 'description' => 5, default => 2
+                    })
+                        ->columnSpan(in_array($key, ['description', 'full_text'], true) ? 3 : 1)
                     : TextInput::make($key)->label($f[0]))->values()->all()
             )]))->values()->all(),
-            Section::make('Додаткові поля з справи')->columnSpanFull()->collapsible()->schema([
+            Section::make('Додаткові поля зі справи')->columnSpanFull()->collapsible()->schema([
                 KeyValue::make('extra_fields')->hiddenLabel()->keyLabel('Назва графи')->valueLabel('Значення'),
             ]),
         ]);
     }
 
     /** Час у таблиці показуємо за Києвом (у БД UTC). */
-    public const TZ = \App\Support\Tz::ZONE;
+    public const TZ = Tz::ZONE;
 
     public static function addedFilter($query, array $data)
     {
@@ -160,10 +169,10 @@ class RecordResource extends Resource
             $query->where('created_at', '>=', $since->utc());
         }
         if ($data['from'] ?? null) {
-            $query->where('created_at', '>=', \Carbon\Carbon::parse($data['from'], static::TZ)->startOfDay()->utc());
+            $query->where('created_at', '>=', Carbon::parse($data['from'], static::TZ)->startOfDay()->utc());
         }
         if ($data['to'] ?? null) {
-            $query->where('created_at', '<=', \Carbon\Carbon::parse($data['to'], static::TZ)->endOfDay()->utc());
+            $query->where('created_at', '<=', Carbon::parse($data['to'], static::TZ)->endOfDay()->utc());
         }
 
         return $query;
@@ -179,13 +188,16 @@ class RecordResource extends Resource
                 ->state(fn (Record $record) => $record->scans->map(fn ($s) => $s->page_label ?: $s->page_order)->implode('–') ?: null)
                 ->tooltip(fn (Record $record) => $record->scans->pluck('filename')->implode(', ') ?: null),
         ];
-        $visible = ['record_no', 'inventory_number', 'account_number', 'title', 'material', 'dimensions', 'condition'];
+        $visible = ['record_no', 'doc_date', 'sheets', 'doc_type', 'title', 'author'];
         foreach (Record::FIELDS as $key => [$label]) {
             $c = TextColumn::make($key)->label($label)->toggleable(isToggledHiddenByDefault: ! in_array($key, $visible, true))->placeholder('—');
-            if (in_array($key, ['title', 'description', 'acquisition_source', 'material', 'notes', 'provenance'], true)) {
+            if (in_array($key, Record::LONG, true)) {
                 $c->wrap()->lineClamp(3)->extraAttributes(['style' => 'min-width:16rem']);
             }
-            if (in_array($key, ['record_no', 'inventory_number', 'account_number'], true)) {
+            if ($key === 'full_text') {
+                $c->limit(300);
+            }
+            if (in_array($key, ['record_no', 'doc_index', 'archive_code', 'doc_date'], true)) {
                 $c->searchable()->sortable();
             }
             $cols[] = $c;
@@ -225,12 +237,13 @@ class RecordResource extends Resource
             ->defaultGroup('page_no')
             ->paginated([25, 50, 100])
             ->defaultPaginationPageOption(25)
-            ->searchPlaceholder('Текст, № документа, інвентарний чи обліковий номер')
+            ->searchPlaceholder('Текст, № документа, індекс, архівний шифр')
             ->searchable()
-            ->searchUsing(fn (Builder $q, string $search) => $q->where(fn ($w) => $w
+            ->searchUsing(fn (Builder $query, string $search) => $query->where(fn ($w) => $w
                 ->where('title', 'like', "%{$search}%")->orWhere('description', 'like', "%{$search}%")
-                ->orWhere('inventory_number', 'like', "%{$search}%")->orWhere('account_number', 'like', "%{$search}%")
-                ->orWhere('record_no', 'like', "%{$search}%")->orWhere('acquisition_source', 'like', "%{$search}%")))
+                ->orWhere('archive_code', 'like', "%{$search}%")->orWhere('doc_index', 'like', "%{$search}%")
+                ->orWhere('record_no', 'like', "%{$search}%")->orWhere('persons', 'like', "%{$search}%")
+                ->orWhere('full_text', 'like', "%{$search}%")))
             ->columns($cols)
             ->filters([
                 SelectFilter::make('museum_id')->label('Архів')->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id'))->searchable(),
@@ -257,10 +270,10 @@ class RecordResource extends Resource
                             $out[] = 'Додано: '.mb_strtolower(['1h' => 'За останню годину', 'today' => 'Сьогодні', '24h' => 'За добу', '7d' => 'За 7 днів', '30d' => 'За 30 днів'][$data['period']] ?? '');
                         }
                         if ($data['from'] ?? null) {
-                            $out[] = 'Додано з '.\Carbon\Carbon::parse($data['from'])->format('d.m.Y');
+                            $out[] = 'Додано з '.Carbon::parse($data['from'])->format('d.m.Y');
                         }
                         if ($data['to'] ?? null) {
-                            $out[] = 'Додано по '.\Carbon\Carbon::parse($data['to'])->format('d.m.Y');
+                            $out[] = 'Додано по '.Carbon::parse($data['to'])->format('d.m.Y');
                         }
 
                         return $out;
@@ -290,7 +303,7 @@ class RecordResource extends Resource
                     }),
             ])
             ->toolbarActions([
-                \App\Filament\Support\Ai::item(BulkAction::make('adapt')->label('Адаптувати до реєстру'))
+                Ai::item(BulkAction::make('adapt')->label('Адаптувати до реєстру'))
                     ->visible(fn () => auth()->user()->canAdaptExport())->requiresConfirmation()
                     ->modalDescription('Адаптуються лише документи зі статусом «Перевірено». Неоднозначності буде передано верифікатору.')
                     ->action(function (Collection $records) {

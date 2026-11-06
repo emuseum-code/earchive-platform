@@ -1,15 +1,11 @@
-# Живий сервер (той самий VPS, що й архівний портал). Порти 80/443 тримає Caddy порталу (/opt/mincult).
-# Наш nginx нічого не публікує, а підключається до мережі mincult_default під іменем books-web;
-# Caddy бере сайт із /opt/caddy-sites/books.caddy.
+# Живий сервер (спільний VPS). Порти 80/443 тримає Caddy музейного порталу (/opt/mincult).
+# Власної мережі проєкт не створює (на VPS скінчилися підмережі Docker): усі сервіси в mincult_default,
+# тому імена archive-* мають бути унікальними на сервері. Caddy бере сайт із /opt/caddy-sites/archive.caddy.
 services:
-  books-web:
+  archive-web:
     ports: !reset []
-    networks:
-      default: {}
-      mincult:
-        aliases: [books-web]
 
 networks:
-  mincult:
+  default:
     name: mincult_default
     external: true

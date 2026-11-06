@@ -8,6 +8,7 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -15,7 +16,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable implements FilamentUser
 {
     /** Демо-акаунти для кнопок швидкого входу на сторінці логіну. */
-    public const DEMO_LOGINS = ['admin@books.test', 'operator@books.test', 'verifier@books.test', 'viewer@books.test'];
+    public const DEMO_LOGINS = ['admin@archive.test', 'operator@archive.test', 'verifier@archive.test', 'viewer@archive.test'];
 
     use HasFactory, Notifiable;
 
@@ -117,17 +118,17 @@ class User extends Authenticatable implements FilamentUser
         return $q->where('is_active', true);
     }
 
-    public function verifiedRecords(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function verifiedRecords(): HasMany
     {
         return $this->hasMany(Record::class, 'verified_by');
     }
 
-    public function remarks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function remarks(): HasMany
     {
         return $this->hasMany(ReviewRemark::class);
     }
 
-    public function aiChecks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function aiChecks(): HasMany
     {
         return $this->hasMany(AiCheck::class);
     }

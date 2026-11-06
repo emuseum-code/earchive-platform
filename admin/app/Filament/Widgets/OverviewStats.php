@@ -2,11 +2,13 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Pages\Settings;
 use App\Models\Book;
 use App\Models\Museum;
 use App\Models\Record;
 use App\Models\Scan;
 use App\Support\Backups;
+use App\Support\Tz;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -29,7 +31,7 @@ class OverviewStats extends StatsOverviewWidget
             Stat::make('Документів', number_format($b->rc, 0, ',', ' '))
                 ->description(number_format($b->rv, 0, ',', ' ').' перевірено · '.(clone $records)->where('verification_status', 'needs_clarification')->count().' на уточненні')
                 ->icon('heroicon-o-table-cells'),
-            Stat::make('Адаптовано до РМФУ', number_format($b->ra, 0, ',', ' '))
+            Stat::make('Описано (ISAD(G))', number_format($b->ra, 0, ',', ' '))
                 ->description((clone $records)->where('export_status', 'ready')->count().' готові до експорту · '.(clone $records)->where('adaptation_status', 'stale')->count().' потребують оновлення')
                 ->icon('heroicon-o-arrows-right-left'),
             Stat::make('Проблемні сторінки', number_format($b->f + $b->m, 0, ',', ' '))
@@ -38,10 +40,10 @@ class OverviewStats extends StatsOverviewWidget
         ];
         if ($u->isAdmin()) {
             $last = Backups::last();
-            $stats[] = Stat::make('Резервна копія бази', $last ? \App\Support\Tz::fmt($last['time'], 'd.m H:i') : 'ще немає')
+            $stats[] = Stat::make('Резервна копія бази', $last ? Tz::fmt($last['time'], 'd.m H:i') : 'ще немає')
                 ->description(Backups::healthy() ? 'перевірено, зберігаються 14 днів' : 'потрібна увага: див. Налаштування → Резервні копії')
                 ->color(Backups::healthy() ? 'success' : 'danger')->icon('heroicon-o-circle-stack')
-                ->url(\App\Filament\Pages\Settings::getUrl());
+                ->url(Settings::getUrl());
         }
 
         return $stats;

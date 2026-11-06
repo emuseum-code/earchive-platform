@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-/** Цільова схема архівного опису (шаблон міграції даних РМФУ). */
+/** Цільова схема архівного опису. */
 class RegistrySchema extends Model
 {
     protected $guarded = ['id'];

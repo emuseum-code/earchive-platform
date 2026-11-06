@@ -5,7 +5,7 @@ namespace App\Enums;
 use Filament\Support\Contracts\HasColor;
 use Filament\Support\Contracts\HasLabel;
 
-/** Рівень папки (ТЗ 4.1). */
+/** Рівень папки: територія → архів → фонд → опис → справа. */
 enum FolderLevel: string implements HasColor, HasLabel
 {
     use EnumHelpers;
@@ -13,6 +13,7 @@ enum FolderLevel: string implements HasColor, HasLabel
     case Territory = 'territory';
     case Museum = 'museum';
     case Fund = 'fund';
+    case Inventory = 'inventory';
     case Book = 'book';
     case Skip = 'skip';
 
@@ -21,7 +22,8 @@ enum FolderLevel: string implements HasColor, HasLabel
         return match ($this) {
             self::Territory => 'Територія',
             self::Museum => 'Архів',
-            self::Fund => 'Напрям обліку / фонд',
+            self::Fund => 'Фонд',
+            self::Inventory => 'Опис',
             self::Book => 'Справа',
             self::Skip => 'Пропустити',
         };
@@ -33,6 +35,7 @@ enum FolderLevel: string implements HasColor, HasLabel
             self::Territory => 'gray',
             self::Museum => 'info',
             self::Fund => 'warning',
+            self::Inventory => 'primary',
             self::Book => 'success',
             self::Skip => 'gray',
         };

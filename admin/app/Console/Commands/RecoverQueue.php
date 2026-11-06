@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class RecoverQueue extends Command
 {
-    protected $signature = 'books:recover {--stale=15 : Хвилин, після яких «виконується» вважається завислим}';
+    protected $signature = 'archive:recover {--stale=15 : Хвилин, після яких «виконується» вважається завислим}';
 
     protected $description = 'Відновити чергу обробки після збою або перезапуску';
 

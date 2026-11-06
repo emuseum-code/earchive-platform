@@ -9,7 +9,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Цільова схема реєстру (шаблон міграції даних РМФУ, 42 поля)
+        // Цільова схема реєстру (архівний опис)
         Schema::create('registry_schemas', function (Blueprint $table) {
             $table->id();
             $table->string('name');

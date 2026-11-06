@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\LocalAvatarProvider;
 use App\Filament\Pages\Dashboard;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -30,10 +31,10 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->profile(isSimple: false)
-            ->brandName('eBooks: Архів: розпізнавання архівних документів')
+            ->brandName('Архів: розпізнавання архівних документів')
             ->favicon(asset('favicon.svg'))
             ->colors(['primary' => Color::Indigo, 'gray' => Color::Slate, 'ai' => Color::Blue])
-            ->defaultAvatarProvider(\App\Filament\LocalAvatarProvider::class)
+            ->defaultAvatarProvider(LocalAvatarProvider::class)
             ->font('Inter')
             ->maxContentWidth('full')
             ->sidebarCollapsibleOnDesktop()

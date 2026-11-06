@@ -7,12 +7,17 @@ use App\Enums\VerificationStatus;
 use App\Filament\Resources\BookResource\Pages;
 use App\Filament\Resources\BookResource\RelationManagers\ScansRelationManager;
 use App\Filament\Support\Access;
+use App\Filament\Support\Ai;
 use App\Models\Book;
 use App\Models\Fund;
 use App\Models\Museum;
 use App\Models\RecognitionTemplate;
 use App\Models\Record;
+use App\Models\Scan;
 use App\Services\QueueManager;
+use App\Services\StorageSync;
+use App\Support\Activity;
+use App\Support\Settings;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
@@ -34,6 +39,8 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\File;
 
 /** Справи та їхні картки (ТЗ 4.1, 10). */
 class BookResource extends Resource
@@ -64,7 +71,7 @@ class BookResource extends Resource
         return ['title', 'folder_path'];
     }
 
-    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    public static function getGlobalSearchResultDetails(Model $record): array
     {
         return array_filter(['Архів' => $record->museum?->name, 'Фонд' => $record->fund?->name]);
     }
@@ -80,15 +87,16 @@ class BookResource extends Resource
     {
         return $schema->components([Section::make()->columnSpanFull()->schema([Grid::make(3)->schema([
             TextInput::make('title')->label('Назва справи')->required()->columnSpan(2),
-            TextInput::make('book_number')->label('Номер / шифр справи'),
+            TextInput::make('inventory_no')->label('Опис'),
+            TextInput::make('book_number')->label('№ справи'),
             Select::make('museum_id')->label('Архів')->options(fn () => Museum::visibleTo(auth()->user())->orderBy('name')->pluck('name', 'id'))
                 ->required()->searchable()->live(),
-            Select::make('fund_id')->label('Напрям обліку / фонд')->options(fn (Get $get) => Fund::where('museum_id', $get('museum_id'))->pluck('name', 'id'))
+            Select::make('fund_id')->label('Фонд')->options(fn (Get $get) => Fund::where('museum_id', $get('museum_id'))->pluck('name', 'id'))
                 ->helperText('Після збереження всі документи справи перейдуть у цей фонд (і архів).'),
             Select::make('book_type')->label('Тип справи')->options(BookType::options())->required(),
             Select::make('recognition_template_id')->label('Шаблон розпізнавання')->options(fn () => RecognitionTemplate::where('is_active', true)->pluck('name', 'id'))
                 ->helperText('Порожньо — за типом справи.'),
-            TextInput::make('years')->label('Роки ведення'),
+            TextInput::make('years')->label('Крайні дати'),
             TextInput::make('language')->label('Мова документів'),
             TextInput::make('expected_pages')->label('Очікувана кількість сторінок')->numeric()
                 ->helperText('Без неї наявність сканів не означає повноти справи.'),
@@ -102,7 +110,8 @@ class BookResource extends Resource
         return $schema->components([
             Section::make()->columnSpanFull()->schema([Grid::make(4)->schema([
                 TextEntry::make('museum.name')->label('Архів')->columnSpan(2),
-                TextEntry::make('fund.name')->label('Напрям обліку / фонд')->placeholder('—'),
+                TextEntry::make('fund.name')->label('Фонд')->placeholder('—'),
+                TextEntry::make('code')->label('Архівний шифр')->state(fn (Book $b) => $b->archiveCode())->placeholder('—'),
                 TextEntry::make('book_type')->label('Тип справи')->badge(),
                 TextEntry::make('folder_path')->label('Шлях до папки')->fontFamily('mono')->size('xs')->columnSpan(2)->copyable(),
                 TextEntry::make('uid')->label('Ідентифікатор')->fontFamily('mono')->size('xs')->copyable(),
@@ -130,6 +139,7 @@ class BookResource extends Resource
                 TextColumn::make('title')->label('Справа')->searchable()->sortable()->weight('medium')->wrap()
                     ->description(fn (Book $b) => $b->museum?->name),
                 TextColumn::make('fund.name')->label('Фонд')->toggleable()->placeholder('—'),
+                TextColumn::make('code')->label('Шифр')->state(fn (Book $b) => $b->archiveCode())->placeholder('—')->toggleable(),
                 TextColumn::make('book_type')->label('Тип')->badge()->toggleable(),
                 TextColumn::make('scans_count')->label('Сканів')->sortable()->alignEnd(),
                 TextColumn::make('recognition')->label('Розпізнано')->state(fn (Book $b) => $b->recognitionProgress())
@@ -153,7 +163,7 @@ class BookResource extends Resource
             ])
             ->recordActions([static::reviewAction(), EditAction::make()->label('')])
             ->toolbarActions([
-                \App\Filament\Support\Ai::item(BulkAction::make('recognize')->label('Розпізнати вибрані справи'))
+                Ai::item(BulkAction::make('recognize')->label('Розпізнати вибрані справи'))
                     ->visible(fn () => auth()->user()->canOperate())->requiresConfirmation()
                     ->modalDescription('Нерозпізнані та помилкові сторінки вибраних справ буде поставлено в чергу Gemini AI.')
                     ->action(fn (Collection $books) => static::recognize($books)),
@@ -209,7 +219,7 @@ class BookResource extends Resource
                     ->imageResizeUpscale(false),
             ]))
             ->action(function (array $data) use ($book) {
-                $root = rtrim((string) \App\Support\Settings::get('storage.root'), '/');
+                $root = rtrim((string) Settings::get('storage.root'), '/');
                 if ($root === '' || ! is_dir($root) || ! is_writable($root)) {
                     Notification::make()->danger()->title('Сховище недоступне для документа')->body($root ?: 'Коренева директорія не задана')->send();
 
@@ -217,7 +227,7 @@ class BookResource extends Resource
                 }
                 $book ??= static::createUploadedBook($data);
                 $dir = $root.'/'.$book->folder_path;
-                \Illuminate\Support\Facades\File::ensureDirectoryExists($dir);
+                File::ensureDirectoryExists($dir);
                 $saved = 0;
                 $names = [];
                 foreach ((array) $data['files'] as $file) {
@@ -233,8 +243,8 @@ class BookResource extends Resource
                     $names[] = basename($target);
                 }
                 // без синхронізації: реєструються лише щойно завантажені файли цієї справи
-                [$new, $errors] = app(\App\Services\StorageSync::class)->registerUploaded($book, array_values(array_unique($names)));
-                \App\Support\Activity::log('scans.uploaded', $book, "Завантажено сканів: {$saved}, нових сторінок: {$new}");
+                [$new, $errors] = app(StorageSync::class)->registerUploaded($book, array_values(array_unique($names)));
+                Activity::log('scans.uploaded', $book, "Завантажено сканів: {$saved}, нових сторінок: {$new}");
                 Notification::make()->{$errors ? 'warning' : 'success'}()->title("Завантажено сканів: {$saved}")
                     ->body("Нових сторінок у справі: {$new}. Тепер їх можна розпізнати (Обробка → Розпізнати)."
                         .($errors ? ' Помилки: '.implode('; ', array_slice($errors, 0, 3)) : ''))->send();
@@ -246,7 +256,7 @@ class BookResource extends Resource
     /** Довша сторона скану після зменшення в браузері; 0 — без зменшення. */
     public static function uploadMaxPx(): int
     {
-        return max(0, (int) \App\Support\Settings::get('storage.upload_max_px'));
+        return max(0, (int) Settings::get('storage.upload_max_px'));
     }
 
     private static function createUploadedBook(array $data): Book
@@ -266,7 +276,7 @@ class BookResource extends Resource
 
     public static function recognize($books, bool $onlyNew = true): void
     {
-        $scans = \App\Models\Scan::whereIn('book_id', collect($books)->pluck('id'))->where('file_status', 'present')
+        $scans = Scan::whereIn('book_id', collect($books)->pluck('id'))->where('file_status', 'present')
             ->when($onlyNew, fn ($q) => $q->whereIn('recognition_status', ['none', 'failed'])->orWhere(fn ($w) => $w->whereIn('book_id', collect($books)->pluck('id'))->where('needs_recheck', true)))
             ->orderBy('book_id')->orderBy('page_order')->get();
         try {

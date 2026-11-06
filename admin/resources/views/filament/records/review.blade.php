@@ -11,7 +11,7 @@
     $cut = fn ($t, $n, $tail) => mb_strlen($t) > $n ? ($tail ? '…'.mb_substr($t, -$n) : mb_substr($t, 0, $n).'…') : $t;
     $uncertain = $record->uncertain_fields ?? [];
     $groups = collect(Record::FIELDS)->groupBy(fn ($f) => $f[1], true);
-    $long = ['title', 'description', 'acquisition_source', 'provenance', 'notes', 'material', 'location'];
+    $long = Record::LONG;
 @endphp
 <x-filament-panels::page>
 {{-- Гарячі клавіші звірки: Ctrl/⌘+S — зберегти правки, Ctrl/⌘+Enter — підтвердити, Alt+PgDn/PgUp — наступний/попередній документ --}}
@@ -203,7 +203,7 @@
                         </label>
                         <div class="bk-row__control"><div class="bk-row__input">
                             @if (in_array($key, $long, true))
-                                <textarea id="f-{{ $key }}" class="bk-input" rows="{{ $key === 'description' ? 5 : 2 }}" wire:model.blur="data.{{ $key }}"
+                                <textarea id="f-{{ $key }}" class="bk-input" rows="{{ match ($key) { 'full_text' => 10, 'description' => 5, default => 2 } }}" wire:model.blur="data.{{ $key }}"
                                           wire:focus="selectField('{{ $key }}')" @disabled(! $canEdit) @if ($canEdit) x-on:mouseup="frag($el, '{{ $key }}')" x-on:keyup.shift="frag($el, '{{ $key }}')" @endif></textarea>
                             @else
                                 <input id="f-{{ $key }}" class="bk-input" type="text" wire:model.blur="data.{{ $key }}" wire:focus="selectField('{{ $key }}')" @disabled(! $canEdit) @if ($canEdit) x-on:mouseup="frag($el, '{{ $key }}')" x-on:keyup.shift="frag($el, '{{ $key }}')" @endif>

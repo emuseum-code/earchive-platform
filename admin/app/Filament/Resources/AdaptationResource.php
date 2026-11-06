@@ -35,7 +35,7 @@ class AdaptationResource extends Resource
 
     protected static ?string $modelLabel = 'адаптація';
 
-    protected static ?string $pluralModelLabel = 'Адаптація до РМФУ';
+    protected static ?string $pluralModelLabel = 'Архівний опис';
 
     protected static ?int $navigationSort = 1;
 

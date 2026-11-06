@@ -4,7 +4,7 @@ namespace App\Support;
 
 use Illuminate\Support\Carbon;
 
-/** Стан резервних копій бази: їх робить контейнер books-backup у storage/backups (ТЗ 12, ТВ-13). */
+/** Стан резервних копій бази: їх робить контейнер archive-backup у storage/backups (ТЗ 12, ТВ-13). */
 class Backups
 {
     public static function dir(): string

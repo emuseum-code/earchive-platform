@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-COPY docker/php.ini /usr/local/etc/php/conf.d/books.ini
+COPY docker/php.ini /usr/local/etc/php/conf.d/archive.ini
 
 WORKDIR /var/www/html
 COPY composer.json composer.lock ./
@@ -22,7 +22,7 @@ RUN rm -f public/storage && mkdir -p storage/app/public storage/app/private stor
     && php artisan filament:assets \
     && chown -R www-data:www-data storage bootstrap/cache
 
-COPY docker/entrypoint.sh /usr/local/bin/books-entrypoint
-RUN chmod +x /usr/local/bin/books-entrypoint
-ENTRYPOINT ["books-entrypoint"]
+COPY docker/entrypoint.sh /usr/local/bin/archive-entrypoint
+RUN chmod +x /usr/local/bin/archive-entrypoint
+ENTRYPOINT ["archive-entrypoint"]
 CMD ["php-fpm"]
