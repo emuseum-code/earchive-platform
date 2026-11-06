@@ -252,3 +252,11 @@ textarea.bk-input { resize: vertical; line-height: 1.45; }
 .fi-btn.bk-ai-action .fi-icon { color: #fff !important; }
 .bk-btn--ai { background: #2563eb; color: #fff; border-color: #2563eb; display: inline-flex; align-items: center; gap: 6px; }
 .bk-btn--ai:hover:not(:disabled) { background: #1d4ed8; }
+
+/* Компактніше ліве меню: більше пунктів видно без прокрутки (Дмитро, 06.11.2026) */
+.fi-sidebar-nav { padding-top: .75rem !important; padding-bottom: .75rem !important; row-gap: 1rem !important; }
+.fi-sidebar-nav-groups { row-gap: 1rem !important; }
+.fi-sidebar-group { row-gap: .25rem !important; }
+.fi-sidebar-group-items { row-gap: 0 !important; }
+.fi-sidebar-item-btn { padding-top: .3rem !important; padding-bottom: .3rem !important; }
+.fi-sidebar-group-btn { padding-top: .25rem !important; padding-bottom: .25rem !important; }

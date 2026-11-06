@@ -54,7 +54,7 @@ class AdminPanelProvider extends PanelProvider
             ->pages([Dashboard::class])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([])
-            ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render('<link rel="stylesheet" href="{{ asset(\'css/books.css\') }}?v=6">'))
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render('<link rel="stylesheet" href="{{ asset(\'css/books.css\') }}?v=7">'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => config('services.demo_login') ? view('filament.partials.demo-login') : '')
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => view('filament.partials.account'))
             ->middleware([

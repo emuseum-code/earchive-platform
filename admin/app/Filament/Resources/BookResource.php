@@ -136,9 +136,11 @@ class BookResource extends Resource
         return $table
             ->defaultSort('title')
             ->columns([
-                TextColumn::make('title')->label('Справа')->searchable()->sortable()->weight('medium')->wrap()
-                    ->description(fn (Book $b) => $b->museum?->name),
-                TextColumn::make('fund.name')->label('Фонд')->toggleable()->placeholder('—'),
+                // компактно (Дмитро, 06.11.2026): справа, де зберігається, вузький фонд у кілька рядків
+                TextColumn::make('title')->label('Справа')->searchable()->sortable()->weight('medium'),
+                TextColumn::make('museum.name')->label('Де зберігається')->toggleable()->placeholder('—'),
+                TextColumn::make('fund.name')->label('Фонд')->toggleable()->placeholder('—')->wrap()
+                    ->extraAttributes(['style' => 'min-width: 12rem; max-width: 18rem; white-space: normal; line-height: 1.3'])->size('sm'),
                 TextColumn::make('code')->label('Шифр')->state(fn (Book $b) => $b->archiveCode())->placeholder('—')->toggleable(),
                 TextColumn::make('book_type')->label('Тип')->badge()->toggleable(),
                 TextColumn::make('scans_count')->label('Сканів')->sortable()->alignEnd(),
