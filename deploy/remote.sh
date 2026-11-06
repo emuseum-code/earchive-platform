@@ -31,6 +31,10 @@ $C restart archive-web
 
 # site block for the museum portal's Caddy; validate first, a broken file would block the reload of every site
 mkdir -p /opt/caddy-sites
+# the same host in two caddy files breaks the reload of every site
+if grep -l -w -F "$DOMAIN" /opt/caddy-sites/*.caddy 2>/dev/null | grep -v '/archive.caddy$'; then
+  echo "::error::$DOMAIN is already in another /opt/caddy-sites file (listed above); not touching Caddy"; exit 1
+fi
 sed "s|ARCHIVE_DOMAIN|$DOMAIN|" deploy/archive.caddy > /opt/caddy-sites/archive.caddy.new
 CADDY="$(docker ps -qf label=com.docker.compose.project=mincult -f label=com.docker.compose.service=caddy | head -1)"
 if [ -z "$CADDY" ]; then
