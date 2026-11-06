@@ -38,6 +38,7 @@ class AdminPanelProvider extends PanelProvider
             ->font('Inter')
             ->maxContentWidth('full')
             ->sidebarCollapsibleOnDesktop()
+            ->sidebarWidth('17.5rem')
             ->databaseNotifications(false)
             ->globalSearch()
             ->globalSearchKeyBindings(['ctrl+k', 'mod+k'])
@@ -54,7 +55,7 @@ class AdminPanelProvider extends PanelProvider
             ->pages([Dashboard::class])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([])
-            ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render('<link rel="stylesheet" href="{{ asset(\'css/books.css\') }}?v=8">'))
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => Blade::render('<link rel="stylesheet" href="{{ asset(\'css/books.css\') }}?v=9">'))
             ->renderHook(PanelsRenderHook::AUTH_LOGIN_FORM_AFTER, fn () => config('services.demo_login') ? view('filament.partials.demo-login') : '')
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn () => view('filament.partials.account'))
             ->middleware([
