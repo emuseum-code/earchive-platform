@@ -26,8 +26,21 @@ class ArchiveSearch
     public static function terms(string $q): array
     {
         preg_match_all('/"([^"]+)"|(\S+)/u', trim($q), $m, PREG_SET_ORDER);
+        // фраза в лапках — дослівно; окреме слово — без відмінкового закінчення («Петлюра» знайде «Петлюрою»)
+        $terms = array_map(fn ($x) => $x[1] !== '' ? trim($x[1]) : self::stem(trim($x[2], " \t,.;:«»\"'()")), $m);
 
-        return array_values(array_filter(array_map(fn ($x) => trim($x[1] !== '' ? $x[1] : $x[2], " \t,.;:«»"), $m), fn ($t) => mb_strlen($t) >= 2));
+        return array_values(array_filter($terms, fn ($t) => mb_strlen($t) >= 2));
+    }
+
+    /** Грубий відкидач закінчень української й російської (дореформеної теж) для слів від 5 літер. */
+    public static function stem(string $word): string
+    {
+        if (mb_strlen($word) < 5 || preg_match('/\d/u', $word)) {
+            return $word;
+        }
+        $cut = preg_replace('/(ами|ями|ові|еві|єві|ого|ому|ими|ій|ою|ею|єю|ам|ям|ах|ях|ів|їв|ом|ем|ой|ей|ий|ий|ая|яя|ое|ее|ые|ых|ыми|а|я|у|ю|і|ї|и|ы|е|є|о|ь|ъ)$/iu', '', $word);
+
+        return mb_strlen($cut) >= 4 ? $cut : $word;
     }
 
     public static function query(string $q, ?User $user = null, ?int $museumId = null): Builder
@@ -43,6 +56,8 @@ class ArchiveSearch
                 foreach (array_keys(self::FIELDS) as $f) {
                     $w->orWhere($f, $op, $like);
                 }
+                // номер справи («4497», «21а») — точний збіг
+                $w->orWhereHas('book', fn (Builder $query) => $query->where('book_number', $term));
                 // SQLite не знижує кирилицю: пробуємо ще з великої літери й усе великими
                 if ($op === 'like') {
                     foreach ([mb_convert_case($term, MB_CASE_TITLE), mb_strtoupper($term), mb_strtolower($term)] as $v) {

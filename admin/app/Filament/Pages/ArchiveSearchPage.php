@@ -18,13 +18,13 @@ class ArchiveSearchPage extends Page
 
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedMagnifyingGlass;
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Дані та звірка';
+    protected static string|\UnitEnum|null $navigationGroup = null;
 
-    protected static ?string $title = 'Пошук по архіву';
+    protected static ?string $title = 'Пошук по текстах документів';
 
-    protected static ?string $navigationLabel = 'Пошук по слову';
+    protected static ?string $navigationLabel = 'Пошук по документах';
 
-    protected static ?int $navigationSort = 0;
+    protected static ?int $navigationSort = -1;
 
     protected static ?string $slug = 'search';
 

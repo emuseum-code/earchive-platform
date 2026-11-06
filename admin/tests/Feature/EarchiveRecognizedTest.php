@@ -36,9 +36,9 @@ class EarchiveRecognizedTest extends TestCase
 
         // пошук по слову знаходить документ і підсвічує збіг
         $this->actingAs(User::where('email', 'admin@archive.test')->firstOrFail())
-            ->get('/admin/search?q='.urlencode('Єльцин'))
+            ->get('/admin/search?q='.urlencode('Єльцина'))
             ->assertOk()
-            ->assertSee('Пошук по архіву')
+            ->assertSee('Пошук по текстах документів')
             ->assertSee('<mark>', false)
             ->assertSee('Ф. 1, оп. 16, спр. 4497');
     }
