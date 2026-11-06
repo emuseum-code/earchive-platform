@@ -1,0 +1,21 @@
+# Read-only check of the running archive on the VPS (Actions → Status → Run workflow): app log tail and counts.
+name: Status
+on: workflow_dispatch
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    env:
+      HOST: ${{ secrets.DEPLOY_HOST || vars.DEPLOY_HOST }}
+      USER: ${{ secrets.DEPLOY_USER || vars.DEPLOY_USER || 'root' }}
+      PORT: ${{ secrets.DEPLOY_PORT || vars.DEPLOY_PORT || '22' }}
+    steps:
+      - name: Status
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "$PORT" "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh -i ~/.ssh/id_deploy -p "$PORT" "$USER@$HOST" '
+            cd /opt/archive && C="docker compose -p archive"
+            $C ps --format "{{.Service}} {{.Status}}"
+            $C logs --tail 80 archive-app
+            $C exec -T archive-app sh -c "ls -la storage/app | head -20; php artisan tinker --execute=\"echo App\\\\Models\\\\Book::count().\\\" books, \\\".App\\\\Models\\\\Scan::count().\\\" scans, \\\".App\\\\Models\\\\Record::count().\\\" records\\\\n\\\";\""'
