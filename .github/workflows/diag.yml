@@ -1,0 +1,10 @@
+# Temporary: find which deploy expression fails before a runner starts. Delete after use.
+name: Diag
+on: workflow_dispatch
+jobs:
+  host: { runs-on: ubuntu-latest, env: { HOST: "${{ secrets.DEPLOY_HOST || vars.DEPLOY_HOST }}" }, steps: [ { run: 'echo "host len ${#HOST}"' } ] }
+  user: { runs-on: ubuntu-latest, env: { USER: "${{ secrets.DEPLOY_USER || vars.DEPLOY_USER || 'root' }}" }, steps: [ { run: 'echo "user len ${#USER}"' } ] }
+  port: { runs-on: ubuntu-latest, env: { PORT: "${{ secrets.DEPLOY_PORT || vars.DEPLOY_PORT || '22' }}" }, steps: [ { run: 'echo "port len ${#PORT}"' } ] }
+  domain: { runs-on: ubuntu-latest, env: { DOMAIN: "${{ secrets.DOMAIN || vars.DOMAIN || 'arch.emuseum.ua' }}" }, steps: [ { run: 'echo "domain $DOMAIN"' } ] }
+  key: { runs-on: ubuntu-latest, env: { HAS_KEY: "${{ secrets.DEPLOY_SSH_KEY != '' }}" }, steps: [ { run: 'echo "key $HAS_KEY"' } ] }
+  conc: { runs-on: ubuntu-latest, concurrency: deploy, steps: [ { run: 'echo conc ok' } ] }
