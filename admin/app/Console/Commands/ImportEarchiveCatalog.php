@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Book;
 use App\Models\Record;
 use App\Models\SyncRun;
 use App\Services\StorageSync;
