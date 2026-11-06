@@ -37,7 +37,7 @@
         <div class="bk-card" wire:key="f-{{ md5($fund) }}">
             <div class="bk-card__head"><h3>📁 {{ $fund }} <span class="bk-muted">· справ {{ $books->count() }}</span></h3></div>
             <div class="bk-table-wrap">
-                <table class="bk-table">
+                <table class="bk-table bk-table--mid">
                     <thead><tr><th>Справа</th><th>Сканів</th><th>Розпізнано</th><th>Документів</th><th>Перевірено</th><th></th></tr></thead>
                     <tbody>
                         @foreach ($books as $b)

@@ -260,3 +260,6 @@ textarea.bk-input { resize: vertical; line-height: 1.45; }
 .fi-sidebar-group-items { row-gap: 0 !important; }
 .fi-sidebar-item-btn { padding-top: .3rem !important; padding-bottom: .3rem !important; }
 .fi-sidebar-group-btn { padding-top: .25rem !important; padding-bottom: .25rem !important; }
+/* Робота з архівом: текст і кнопки посередині рядка (Дмитро, 06.11.2026) */
+.bk-table--mid td { vertical-align: middle; }
+.bk-table--mid .bk-actions { margin: 0; justify-content: flex-end; }
