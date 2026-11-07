@@ -18,7 +18,9 @@ if [ -n "$need" ]; then apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt
 command -v composer >/dev/null || { curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer; }
 
 # 2. код
-if [ -d "$APP/.git" ]; then git -C "$APP" pull --ff-only; else git clone --depth 1 "$REPO" "$APP"; fi
+# код або з git, або вже переданий rsync-ом (тоді папка є, а .git немає)
+if [ -d "$APP/.git" ]; then git -C "$APP" pull --ff-only
+elif [ ! -d "$APP/admin" ]; then git clone --depth 1 "$REPO" "$APP"; fi
 cd "$APP/admin"
 
 # 3. база MySQL і .env (створюються один раз)
