@@ -64,10 +64,28 @@ if command -v pm2 >/dev/null; then
   pm2 save >/dev/null
 fi
 CRON="* * * * * cd $APP/admin && php artisan schedule:run >/dev/null 2>&1"
-( crontab -u www-data -l 2>/dev/null | grep -v "$APP/admin" ; echo "$CRON" ) | crontab -u www-data -
+( crontab -u www-data -l 2>/dev/null | grep -v "$APP/admin" || true; echo "$CRON" ) | crontab -u www-data -
 
 # 6. nginx + сертифікат
-SOCK="$(ls /run/php/$PHP-fpm.sock 2>/dev/null || ls /run/php/php*-fpm.sock | head -1)"
+# власний пул PHP-FPM (на Jam-сервері в кожного сайту свій пул, загальний www вимкнено)
+SOCK=/run/php/archive.sock
+if [ ! -f /etc/php/8.4/fpm/pool.d/archive.conf ]; then
+  cat > /etc/php/8.4/fpm/pool.d/archive.conf <<POOL
+[archive]
+user = www-data
+group = www-data
+listen = $SOCK
+listen.owner = www-data
+listen.group = www-data
+pm = ondemand
+pm.max_children = 6
+pm.process_idle_timeout = 30s
+php_admin_value[memory_limit] = 512M
+php_admin_value[upload_max_filesize] = 50M
+php_admin_value[post_max_size] = 60M
+POOL
+  php-fpm8.4 -t && systemctl reload php8.4-fpm
+fi
 if [ ! -f /etc/nginx/sites-available/archive ]; then
   sed -e "s|ARCHIVE_DOMAIN|$DOMAIN|g" -e "s|ARCHIVE_ROOT|$APP/admin/public|g" -e "s|ARCHIVE_SOCK|$SOCK|g" \
     "$APP/deploy/jam/nginx.conf" > /etc/nginx/sites-available/archive
