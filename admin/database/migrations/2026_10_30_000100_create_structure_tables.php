@@ -13,7 +13,8 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('koatuu', 20)->nullable();
-            $table->string('folder_path', 1024)->nullable()->unique();
+            // 768 символів: ключ MySQL utf8mb4 не довший за 3072 байти (Jam-сервер на MySQL 8)
+            $table->string('folder_path', 768)->nullable()->unique();
             $table->timestamps();
         });
 
@@ -24,7 +25,7 @@ return new class extends Migration
             $table->string('short_name')->nullable();
             $table->string('edrpou', 12)->nullable();
             $table->string('rmfu_id')->nullable()->comment('Код архіву (зовнішній ідентифікатор)');
-            $table->string('folder_path', 1024)->nullable()->unique();
+            $table->string('folder_path', 768)->nullable()->unique();
             $table->string('contact_person')->nullable();
             $table->string('contact_email')->nullable();
             $table->text('notes')->nullable();
@@ -37,7 +38,7 @@ return new class extends Migration
             $table->foreignId('museum_id')->constrained()->cascadeOnDelete();
             $table->string('name')->comment('Фонд');
             $table->string('code', 50)->nullable();
-            $table->string('folder_path', 1024)->nullable()->unique();
+            $table->string('folder_path', 768)->nullable()->unique();
             $table->timestamps();
         });
 
@@ -68,7 +69,7 @@ return new class extends Migration
             $table->string('book_number', 50)->nullable()->comment('Номер справи');
             $table->string('years', 50)->nullable()->comment('Роки ведення справи');
             $table->string('language', 30)->nullable();
-            $table->string('folder_path', 1024)->nullable()->unique();
+            $table->string('folder_path', 768)->nullable()->unique();
             $table->unsignedInteger('expected_pages')->nullable()->comment('Очікувана кількість сторінок, якщо відома');
             // лічильники для картки й огляду (оновлюються сервісом, щоб не рахувати 1,5 млн рядків на кожен запит)
             $table->unsignedInteger('scans_count')->default(0);
@@ -89,7 +90,7 @@ return new class extends Migration
             $table->id();
             $table->uuid('uid')->unique();
             $table->foreignId('book_id')->constrained()->cascadeOnDelete();
-            $table->string('path', 1024)->unique()->comment('Шлях відносно кореневої директорії');
+            $table->string('path', 768)->unique()->comment('Шлях відносно кореневої директорії');
             $table->string('filename');
             $table->unsignedInteger('page_order')->default(0);
             $table->string('page_label', 50)->nullable()->comment('Аркуш / розворот з справи');
@@ -145,7 +146,7 @@ return new class extends Migration
 
         Schema::create('unmapped_folders', function (Blueprint $table) {
             $table->id();
-            $table->string('path', 1024)->unique();
+            $table->string('path', 768)->unique();
             $table->unsignedInteger('jpg_count')->default(0);
             $table->foreignId('sync_run_id')->nullable()->constrained()->nullOnDelete();
             $table->string('resolution', 20)->nullable()->comment('Обраний рівень після ручного уточнення');
