@@ -86,7 +86,7 @@ class AttachEarchiveScans extends Command
                 foreach ($pages as $i => $scan) {
                     $n = (int) preg_replace('/^.*-(\d+)\.jpg$/u', '$1', $scan->filename);
                     if (! $scan->page_label) {
-                        $scan->update(['page_label' => ($sheets ? 'арк. '.trim($sheets).', ' : '').'с. '.$n]);
+                        $scan->update(['page_label' => mb_substr(($sheets ? 'арк. '.trim($sheets).', ' : '').'с. '.$n, 0, 255)]);
                     }
                     $attach[$scan->id] = ['position' => $i + 1, 'is_continuation' => $i > 0];
                 }
